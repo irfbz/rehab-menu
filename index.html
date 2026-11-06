@@ -1,0 +1,1348 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0B0D0C">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="REHAB MENU">
+<title>リハビリメニュー作成</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;1,700;1,800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap">
+<style>
+/* Layout: scoreboard-style dark workspace (library | plan); patient view = one dark column; print = white A4 sheet */
+:root{
+  --bg:#0B0D0C; --panel:#111412; --card:#141816; --field:#161A18;
+  --line:#262B28; --line2:#2E3431;
+  --fg:#F2F4F1; --fg2:#C9D0CB; --mute:#9AA39E; --mute2:#7E8782; --dim:#5D6661;
+  --ac:#D7FF3A; --ac-tint:#181D12; --ac-deep:#12160D; --on-ac:#0B0D0C;
+  --warn:#FF8A8A;
+  --disp:'Barlow Condensed','Arial Narrow','Helvetica Neue',sans-serif;
+  --jp:'Noto Sans JP','Hiragino Sans','Hiragino Kaku Gothic ProN','Yu Gothic',system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--fg)}
+body{margin:0;font-family:var(--jp);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:40;background:var(--bg)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:var(--ac)}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+.gut{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.disp{font-family:var(--disp);font-style:italic;font-weight:800;letter-spacing:.01em;line-height:.95}
+.lbl{font-family:var(--disp);font-weight:700;font-size:12px;letter-spacing:.14em;color:var(--mute);text-transform:uppercase}
+.mute{color:var(--mute)}
+.num{font-variant-numeric:tabular-nums}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* controls */
+.btn{min-height:42px;padding:0 16px;border-radius:6px;border:1px solid var(--line2);background:transparent;color:var(--fg);font-size:14px;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;text-decoration:none}
+.btn:hover{border-color:var(--mute2)}
+.btn.pri{background:var(--ac);border-color:var(--ac);color:var(--on-ac);font-weight:900}
+.btn.strong{border-color:var(--fg);font-weight:700}
+.btn.sm{min-height:34px;padding:0 12px;font-size:13px}
+.btn.danger{color:var(--warn);border-color:#4A2B2B}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.iconbtn{width:36px;height:36px;border-radius:6px;border:1px solid var(--line2);background:transparent;color:var(--ac);font-size:20px;line-height:1;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;padding:0}
+.iconbtn.plain{color:var(--mute2);border-color:transparent}
+.field{min-height:40px;background:var(--field);border:1px solid var(--line2);border-radius:6px;padding:0 10px;color:var(--fg);min-width:0}
+.field:focus{border-color:var(--ac);outline:none}
+textarea.field{padding:10px 12px;resize:vertical;width:100%;line-height:1.6}
+input[type=date].field{padding:0 8px}
+.chip{min-height:30px;padding:0 12px;border:1px solid var(--line2);border-radius:4px;background:transparent;color:var(--fg2);font-size:12px;white-space:nowrap}
+.chip.on{background:var(--ac);border-color:var(--ac);color:var(--on-ac);font-weight:900}
+.seg{display:flex;background:var(--field);border:1px solid var(--line2);border-radius:8px;padding:3px;gap:2px}
+.seg button{min-height:32px;padding:0 14px;border:0;border-radius:5px;background:transparent;color:var(--mute);font-size:13px;white-space:nowrap}
+.seg button.on{background:var(--ac);color:var(--on-ac);font-weight:900}
+.tabs{display:flex;gap:24px;border-bottom:1px solid var(--line)}
+.tabs button{min-height:40px;padding:0;border:0;border-bottom:3px solid transparent;background:transparent;font-family:var(--disp);font-weight:700;font-size:17px;letter-spacing:.08em;color:var(--mute2)}
+.tabs button.on{border-bottom-color:var(--ac);color:var(--fg);font-weight:800}
+.swatches{display:flex;gap:8px;align-items:center}
+.sw{width:22px;height:22px;border-radius:50%;border:0;outline:2px solid transparent;outline-offset:3px;padding:0}
+.sw.on{outline-color:var(--fg)}
+.flab{display:flex;flex-direction:column;gap:3px}
+.flab>span{font-family:var(--disp);font-weight:700;font-size:11px;letter-spacing:.14em;color:var(--mute2);text-transform:uppercase}
+.inline-lab{display:flex;align-items:center;gap:8px;font-family:var(--disp);font-weight:700;font-size:13px;letter-spacing:.12em;color:var(--mute)}
+
+/* top bar */
+.topbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;padding-block:12px;border-bottom:1px solid var(--line);background:var(--bg);position:sticky;top:env(safe-area-inset-top,0px);z-index:20}
+.brand{display:flex;align-items:center;gap:10px;color:var(--fg);background:none;border:0;padding:0;text-align:left}
+.brand .mark{width:32px;height:28px;background:var(--ac);transform:skewX(-14deg);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.brand .mark span{transform:skewX(14deg);font-family:var(--disp);font-style:italic;font-weight:800;font-size:17px;color:var(--on-ac)}
+.brand b{display:block;font-family:var(--disp);font-style:italic;font-weight:800;font-size:21px;letter-spacing:.04em;line-height:1}
+.brand small{display:block;font-size:10px;color:var(--mute);letter-spacing:.1em;margin-top:2px}
+.spacer{flex:1}
+.back{background:none;border:0;color:var(--fg2);font-size:14px;min-height:44px;padding:0;display:flex;align-items:center;gap:4px}
+
+/* home */
+.home{max-width:1080px;margin:0 auto;padding-block:28px 64px;display:flex;flex-direction:column;gap:36px}
+.newgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.newcard{position:relative;text-align:left;padding:18px 18px 16px;border:1px solid var(--line2);border-radius:10px;background:var(--card);color:var(--fg);display:flex;flex-direction:column;gap:6px;min-height:132px;overflow:hidden}
+.newcard:hover{border-color:var(--ac)}
+.newcard .disp{font-size:34px}
+.newcard .jp{font-weight:900;font-size:15px}
+.newcard .desc{font-size:12px;color:var(--mute)}
+.newcard .go{position:absolute;right:16px;top:16px;width:30px;height:30px;background:var(--ac);color:var(--on-ac);display:flex;align-items:center;justify-content:center;transform:skewX(-12deg);font-weight:900}
+.sec-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.sec-head h2{margin:0;font-size:34px}
+.sec-head h2 small{display:block;font-family:var(--jp);font-style:normal;font-weight:700;font-size:12px;color:var(--mute);letter-spacing:.1em;margin-bottom:4px}
+.plist{display:flex;flex-direction:column;gap:8px}
+.prow{display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:16px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.prow .ini{font-family:var(--disp);font-style:italic;font-weight:800;font-size:28px;color:var(--ac);overflow:hidden;text-overflow:ellipsis}
+.prow .meta{font-size:13px;color:var(--mute)}
+.prow .ttl{font-weight:700}
+.prow .acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.empty{padding:28px 18px;border:1px dashed var(--line2);border-radius:10px;color:var(--mute);text-align:center}
+.menugrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.menucard{text-align:left;padding:16px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--fg);display:flex;justify-content:space-between;align-items:center;gap:12px}
+.menucard:hover{border-color:var(--mute2)}
+.menucard b{display:block;font-family:var(--disp);font-weight:800;font-size:20px;letter-spacing:.06em}
+.menucard span{font-size:12px;color:var(--mute)}
+.menucard .count{font-family:var(--disp);font-style:italic;font-weight:800;font-size:28px;color:var(--ac)}
+.notice{padding:12px 14px;border:1px solid var(--line2);border-left:0;border-radius:8px;background:var(--panel);font-size:13px;color:var(--fg2);display:flex;gap:12px;align-items:flex-start;justify-content:space-between}
+
+/* editor */
+.ed-fields{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;flex:1 1 560px}
+.ed-fields .ini{width:72px;font-family:var(--disp);font-weight:700;font-size:18px;letter-spacing:.04em}
+.daysbadge{font-family:var(--disp);font-style:italic;font-weight:800;font-size:18px;color:var(--ac);white-space:nowrap}
+.ed-actions{display:flex;gap:8px;flex-wrap:wrap}
+.ed-body{display:flex;align-items:stretch}
+.lib{flex:0 0 360px;background:var(--panel);border-right:1px solid var(--line);padding-block:20px;display:flex;flex-direction:column;gap:12px;overflow:hidden}
+.lib-head{display:none}
+.lib-list{display:flex;flex-direction:column;gap:6px;overflow-y:auto;flex:1;padding-bottom:12px;margin-inline:-4px;padding-inline:4px}
+.lib-chips{display:flex;flex-wrap:wrap;gap:6px}
+.search{position:relative}
+.search input{width:100%;padding-left:36px}
+.search svg{position:absolute;left:12px;top:12px}
+.lrow{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);touch-action:pan-y}
+.lrow .lt{width:52px;height:34px;border-radius:4px;background:#2A302D;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-weight:700;font-size:10px;letter-spacing:.08em;color:var(--dim)}
+.lrow .lt img{width:100%;height:100%;object-fit:cover}
+.lrow .lm{flex:1;min-width:0}
+.lrow .lm b{display:block;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lrow .lm span{font-family:var(--disp);font-weight:600;font-size:14px;color:var(--mute)}
+.lrow.tpl{padding:12px}
+.lrow.tpl .lm b{font-size:14px}
+.lrow.tpl .lm span{font-size:13px;letter-spacing:.06em}
+.lrow .owner{font-size:11px;color:var(--mute2);font-family:var(--jp)}
+.grip{color:var(--dim);cursor:grab;display:flex;align-items:center;padding:4px;flex-shrink:0;touch-action:none}
+.plan{flex:1;min-width:0;padding-block:24px 120px;display:flex;flex-direction:column;gap:12px}
+.plan>*{flex-shrink:0}
+.plan-head{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px}
+.plan-head .jp{font-size:12px;font-weight:700;color:var(--mute);letter-spacing:.1em}
+.plan-head h1{margin:0;font-size:44px}
+.plan-head h1 em{color:var(--ac);font-style:inherit;margin-left:12px}
+.items{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;min-height:76px}
+.item{display:flex;flex-wrap:wrap;align-items:center;gap:12px 14px;padding:12px 14px;background:var(--card);border:1px solid var(--line);border-radius:10px}
+.item .no{font-family:var(--disp);font-style:italic;font-weight:800;font-size:30px;color:var(--ac);width:38px;line-height:1}
+.item .th{width:96px;height:54px;border-radius:6px;background:#2A302D;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-weight:700;font-size:11px;letter-spacing:.1em;color:var(--dim)}
+.item .th img{width:100%;height:100%;object-fit:cover}
+.item .info{flex:1 1 180px;min-width:0;display:flex;flex-direction:column;gap:4px}
+.item .nm{font-size:16px;font-weight:900}
+.item .pt{min-height:32px;font-size:13px;color:var(--fg2);background:transparent;border-color:transparent;padding:0 6px;margin-left:-6px}
+.item .pt:hover{border-color:var(--line2)}
+.item .flds{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}
+.item .big{width:52px;text-align:center;font-family:var(--disp);font-weight:700;font-size:22px;background:var(--bg);padding:0 4px}
+.item .unit{width:58px;background:var(--bg);font-size:13px;padding:0 4px}
+.item .lt-sel{width:84px;background:var(--bg);font-size:13px;padding:0 4px}
+.item .lv{width:84px;background:var(--bg);font-size:13px;font-weight:700}
+.item .fq{width:96px;background:var(--bg);font-size:13px;padding:0 4px}
+.step{display:flex;gap:4px;align-items:center}
+.step button{width:30px;height:40px;border:1px solid var(--line2);border-radius:6px;background:transparent;font-size:16px;color:var(--fg2)}
+.sidechk{display:flex;align-items:center;gap:6px;min-height:40px;font-size:13px;color:var(--fg2)}
+.sidechk input{width:18px;height:18px;accent-color:var(--ac)}
+.dropzone{border:2px dashed var(--line2);border-radius:10px;padding:18px;text-align:center;color:var(--mute);display:flex;flex-direction:column;gap:4px;align-items:center}
+.dropzone b{font-family:var(--disp);font-style:italic;font-weight:800;font-size:18px;letter-spacing:.08em;color:var(--ac)}
+.items .dropzone{list-style:none}
+.ghost{opacity:.4;border-color:var(--ac)!important;border-style:dashed!important}
+.items .lrow{border-color:var(--ac)}
+.notebox{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.foot-info{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;font-size:12px;color:var(--mute)}
+.mbar{display:none}
+
+/* weekly */
+.btabs{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btab{display:flex;align-items:stretch;min-height:44px;padding:0;border:1px solid var(--line2);border-radius:8px;background:var(--card);overflow:hidden;color:var(--fg)}
+.btab .bl{width:36px;display:flex;align-items:center;justify-content:center;background:var(--bc);color:#0B0D0C;font-family:var(--disp);font-style:italic;font-weight:800;font-size:22px}
+.btab .bn{display:flex;align-items:center;gap:8px;padding:0 12px;font-size:13px;font-weight:700}
+.btab .bn small{font-family:var(--disp);font-weight:600;font-size:13px;color:var(--mute)}
+.btab.on{border-color:var(--fg);box-shadow:0 0 0 1px var(--fg)}
+.bedit{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.bedit input{width:200px}
+.sched{margin-top:14px;padding-top:18px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:12px}
+.sched-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px}
+.sched-head h2{margin:0;font-size:32px}
+.days-wrap{overflow-x:auto;padding-bottom:4px}
+.days{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(118px,1fr);gap:8px}
+.day{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px;min-height:170px}
+.day.rest{background:repeating-linear-gradient(135deg,#111412 0 10px,#161A18 10px 20px)}
+.day .dh{display:flex;justify-content:space-between;align-items:baseline}
+.day .dh b{font-family:var(--disp);font-style:italic;font-weight:800;font-size:28px;line-height:1}
+.day .dh span{font-family:var(--disp);font-weight:700;font-size:13px;letter-spacing:.1em;color:var(--mute)}
+.bchip{min-height:36px;padding:0 8px;border:1px solid var(--line2);border-radius:6px;background:transparent;color:var(--mute);font-size:12px;text-align:left;display:flex;align-items:center;gap:6px;overflow:hidden;white-space:nowrap}
+.bchip i{font-family:var(--disp);font-weight:800;font-size:15px;font-style:italic}
+.bchip.on{background:var(--bc);border-color:var(--bc);color:#0B0D0C;font-weight:900}
+.restlbl{margin-top:auto;text-align:center;font-family:var(--disp);font-style:italic;font-weight:800;letter-spacing:.1em;color:var(--fg2)}
+.restlbl small{display:block;font-family:var(--jp);font-style:normal;font-weight:400;font-size:11px;color:var(--mute);letter-spacing:0}
+
+/* pages: library / templates / settings */
+.page{max-width:980px;margin:0 auto;padding-block:24px 64px;display:flex;flex-direction:column;gap:18px}
+.page h1{margin:0;font-size:42px}
+.page h1 small{display:block;font-family:var(--jp);font-style:normal;font-weight:700;font-size:12px;color:var(--mute);letter-spacing:.1em;margin-bottom:4px}
+.toolrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.toolrow .search{flex:1 1 240px}
+.exrow{display:grid;grid-template-columns:84px minmax(0,1fr) auto;gap:14px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.exrow .lt{width:84px;height:48px;border-radius:6px;background:#2A302D;overflow:hidden;display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-weight:700;font-size:10px;letter-spacing:.1em;color:var(--dim)}
+.exrow .lt img{width:100%;height:100%;object-fit:cover}
+.exrow b{font-weight:900}
+.exrow .meta{font-size:12px;color:var(--mute)}
+.tag{display:inline-block;font-size:11px;padding:1px 6px;border:1px solid var(--line2);border-radius:3px;color:var(--fg2);margin-right:4px}
+.card{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:18px;display:flex;flex-direction:column;gap:14px}
+.card h2{margin:0;font-family:var(--disp);font-weight:800;font-size:22px;letter-spacing:.06em}
+.card h2 small{font-family:var(--jp);font-weight:700;font-size:12px;color:var(--mute);margin-left:8px;letter-spacing:.06em}
+.hdrrow{display:grid;grid-template-columns:64px minmax(0,1fr);gap:14px;align-items:start;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.logo-box{width:64px;height:64px;border:1px dashed var(--dim);border-radius:6px;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:11px;color:var(--mute);background:#fff}
+.logo-box img{width:100%;height:100%;object-fit:contain}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.chk{display:flex;align-items:center;gap:8px;font-size:14px}
+.chk input{width:18px;height:18px;accent-color:var(--ac)}
+.help{font-size:12px;color:var(--mute);line-height:1.7}
+
+/* preview */
+.pv{max-width:1100px;margin:0 auto;padding-block:20px 64px;display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start}
+.pv-main{flex:999 1 560px;min-width:0;display:flex;flex-direction:column;gap:14px}
+.pv-side{flex:1 1 300px;min-width:0;display:flex;flex-direction:column;gap:14px}
+.sheet-wrap{background:#3A403C;border-radius:10px;padding:16px;overflow:hidden}
+.sheet-wrap .sheet{box-shadow:0 10px 30px rgba(0,0,0,.4);margin:0 auto 16px;transform-origin:top left}
+.sheet-wrap .sheet:last-child{margin-bottom:0}
+.phone{width:min(390px,100%);height:760px;margin:0 auto;border:8px solid #1E2321;border-radius:36px;overflow:hidden;background:var(--bg)}
+.phone-in{height:100%;overflow-y:auto}
+.linkbox{display:flex;flex-direction:column;gap:10px}
+.linkbox textarea{font-size:11px;font-family:ui-monospace,Menlo,monospace;height:72px;color:var(--fg2)}
+.qrbig{background:#fff;border-radius:10px;padding:12px;display:flex;justify-content:center}
+.qrbig svg{width:220px;height:220px}
+.frame-note{padding:12px 14px;border:1px solid #4A3E1F;background:#1C1810;border-radius:8px;font-size:13px;color:#E8D9A8;line-height:1.7}
+
+/* modal & toast */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.62);z-index:60;display:flex;align-items:flex-end;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+@media (min-width:700px){.modal-bg{align-items:center}}
+.modal{width:min(560px,100%);max-height:100%;overflow-y:auto;background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:14px}
+.modal h3{margin:0;font-family:var(--disp);font-style:italic;font-weight:800;font-size:28px}
+.modal h3 small{display:block;font-family:var(--jp);font-style:normal;font-weight:700;font-size:12px;color:var(--mute);letter-spacing:.1em}
+.modal .row{display:flex;flex-wrap:wrap;gap:10px}
+.modal .row>*{flex:1 1 120px}
+.modal .field{width:100%}
+.modal-acts{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.modal-acts .left{margin-right:auto}
+#toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:8px;font-weight:700;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:80;max-width:calc(100% - 32px)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+img.broken{display:none}
+
+/* desktop editor: fixed-height workspace, two scrolling columns */
+@media (min-width:901px){
+  .ed{height:100vh;height:100dvh;display:flex;flex-direction:column}
+  .ed>.topbar{position:static;flex:0 0 auto}
+  .ed-body{flex:1;min-height:0}
+  .lib{position:static;max-height:none}
+  .plan{overflow-y:auto;padding-bottom:48px}
+}
+/* phone layout */
+@media (max-width:900px){
+  .newgrid,.menugrid{grid-template-columns:1fr}
+  .newcard{min-height:0}
+  .ed-top .ed-actions{display:none}
+  .ed-fields{flex-basis:100%}
+  .lib{position:fixed;left:0;right:0;bottom:0;top:auto;height:min(68vh,560px);max-height:none;z-index:50;border-right:0;border-top:1px solid var(--line2);border-radius:18px 18px 0 0;transform:translateY(105%);transition:transform .22s ease;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));box-shadow:0 -10px 30px rgba(0,0,0,.5)}
+  .lib.open{transform:none}
+  .lib-head{display:flex;justify-content:space-between;align-items:center}
+  .plan{padding-bottom:140px}
+  .plan-head h1{font-size:36px}
+  .mbar{display:flex;gap:8px;position:fixed;left:0;right:0;bottom:0;z-index:30;padding-top:10px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));background:linear-gradient(transparent,var(--bg) 30%)}
+  .mbar .btn{flex:1}
+  .item{padding:10px 12px;gap:10px}
+  .item .th{width:64px;height:44px}
+  .item .no{font-size:24px;width:28px}
+  .item{position:relative}
+  .item>.iconbtn.plain{position:absolute;top:4px;right:4px}
+  .item .info{padding-right:28px}
+  .item .flds{flex-basis:100%}
+  .prow{grid-template-columns:56px minmax(0,1fr)}
+  .prow .acts{grid-column:1/-1;justify-content:flex-start}
+  .grid2{grid-template-columns:1fr}
+  .exrow{grid-template-columns:64px minmax(0,1fr)}
+  .exrow .lt{width:64px;height:40px}
+  .exrow>.btn{grid-column:1/-1;justify-self:start}
+}
+
+/* ---------- patient view (dark) ---------- */
+.vw{max-width:520px;margin:0 auto;padding-block:20px 48px;display:flex;flex-direction:column;gap:14px}
+.v-org{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--mute)}
+.vw h1{margin:10px 0 0;font-size:46px}
+.vw h1 span{color:var(--ac)}
+.v-period{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:10px}
+.v-period b{font-family:var(--disp);font-weight:700;font-size:18px}
+.v-period i{font-style:normal;font-size:12px;color:var(--on-ac);background:var(--ac);padding:2px 8px;font-weight:900;transform:skewX(-10deg)}
+.v-note{padding:12px 14px;background:var(--card);border:1px solid var(--line);border-radius:10px}
+.v-note p{margin:2px 0 0;font-size:14px;line-height:1.7;white-space:pre-wrap}
+.v-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+.v-tab{flex-shrink:0;width:56px;height:62px;border:1px solid var(--line2);border-radius:8px;background:var(--card);color:var(--fg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0}
+.v-tab small{font-family:var(--disp);font-weight:700;font-size:12px;letter-spacing:.08em;color:var(--mute)}
+.v-tab b{font-family:var(--disp);font-style:italic;font-weight:800;font-size:24px;line-height:1}
+.v-tab.rest{background:transparent;border-color:var(--line);color:var(--mute)}
+.v-tab.rest b{font-size:15px;font-style:normal}
+.v-tab.on{background:var(--ac);border-color:var(--ac);color:var(--on-ac)}
+.v-tab.on small{color:var(--on-ac)}
+.v-sum{font-size:13px;color:var(--mute)}
+.v-sum b{font-family:var(--disp);font-weight:800;font-size:18px;color:var(--fg)}
+.v-block{display:flex;align-items:center;gap:10px;margin-top:6px}
+.v-block i{width:30px;height:30px;display:flex;align-items:center;justify-content:center;background:var(--bc);color:#0B0D0C;font-family:var(--disp);font-weight:800;font-size:18px}
+.v-block b{font-weight:900}
+.v-card{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.v-media{display:block;position:relative;aspect-ratio:16/9;max-width:100%;background:#2A302D;text-decoration:none;color:var(--fg)}
+.v-media img{width:100%;height:100%;object-fit:cover;display:block}
+.v-media .play{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;background:var(--ac);display:flex;align-items:center;justify-content:center}
+.v-media .vn{position:absolute;left:12px;top:6px;font-family:var(--disp);font-style:italic;font-weight:800;font-size:40px;text-shadow:0 2px 10px rgba(0,0,0,.6)}
+.v-media .st{position:absolute;right:10px;bottom:10px;font-size:12px;color:#0B0D0C;background:#F2F4F1;padding:3px 8px;border-radius:4px;font-weight:700}
+.v-body{padding:12px 14px 14px}
+.v-title{display:flex;align-items:baseline;gap:10px}
+.v-title .vn{font-family:var(--disp);font-style:italic;font-weight:800;font-size:26px;color:var(--ac)}
+.v-title b{font-size:18px;font-weight:900}
+.v-stats{display:flex;flex-wrap:wrap;gap:6px 20px;margin-top:8px}
+.v-stats div>span{display:block;font-family:var(--disp);font-weight:700;font-size:11px;letter-spacing:.14em;color:var(--mute)}
+.v-stats strong{font-family:var(--disp);font-weight:800;font-size:30px;line-height:1}
+.v-stats strong small{font-family:var(--jp);font-size:12px;font-weight:700;margin-left:2px}
+.v-stats .acc{color:var(--ac)}
+.v-stats .jp{font-family:var(--jp);font-size:16px;font-weight:700;line-height:30px}
+.v-pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.v-pill{font-size:12px;font-weight:700;border:1px solid var(--line2);border-radius:4px;padding:1px 8px;color:var(--fg2)}
+.v-pill.ac{border-color:var(--ac);color:var(--ac)}
+.v-point{font-size:13px;color:var(--fg2);margin-top:8px;line-height:1.6}
+.v-vlink{display:inline-flex;margin-top:10px}
+.v-rest{padding:40px 16px;text-align:center;border:1px dashed var(--line2);border-radius:12px}
+.v-rest .disp{font-size:44px;color:var(--fg2)}
+.v-foot{font-size:11px;color:var(--dim);text-align:center;margin-top:12px}
+
+/* ---------- A4 sheet (white) ---------- */
+.sheet{width:210mm;min-height:297mm;padding:11mm 12mm;background:#fff;color:#0B0D0C;font-family:var(--jp);display:flex;flex-direction:column;gap:4.5mm;-webkit-print-color-adjust:exact;print-color-adjust:exact;position:relative}
+.p-top{display:flex;justify-content:space-between;align-items:center;gap:6mm}
+.p-org{display:flex;align-items:center;gap:3mm;font-size:4.2mm;font-weight:700}
+.p-logo{width:13mm;height:13mm;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.p-logo img{width:100%;height:100%;object-fit:contain}
+.p-dates{display:flex;gap:6mm}
+.p-dates .k{font-family:var(--disp);font-weight:700;font-size:3mm;letter-spacing:.14em;color:#59645E}
+.p-dates .v{font-family:var(--disp);font-weight:700;font-size:5.4mm;white-space:nowrap}
+.p-dates .v small{font-family:var(--jp);font-size:3.6mm}
+.p-title{display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:3mm;border-bottom:1.2mm solid #0B0D0C;gap:6mm}
+.p-title h1{white-space:nowrap;margin:0;font-family:var(--disp);font-style:italic;font-weight:800;font-size:16mm;line-height:.85}
+.p-badge{display:inline-block;background:var(--ac);transform:skewX(-12deg);padding:.4mm 3mm;font-size:3.6mm;font-weight:900;margin-left:1mm}
+.p-sub{font-size:3.9mm;font-weight:700;margin-top:2mm}
+.p-name{font-family:var(--disp);font-weight:700;font-size:5.8mm;white-space:nowrap}
+.p-name small{font-family:var(--jp);font-size:3.6mm}
+.p-name .blank{display:inline-block;width:42mm;border-bottom:1px solid #0B0D0C;margin-left:2mm}
+.p-body{flex:1;display:flex;flex-direction:column}
+.p-row{display:grid;grid-template-columns:15mm 44mm minmax(0,1fr) 26mm;gap:4.5mm;align-items:center;padding:4.5mm 0;border-bottom:1px solid #0B0D0C;break-inside:avoid}
+.p-no{font-family:var(--disp);font-style:italic;font-weight:800;font-size:15mm;line-height:1}
+.p-img{height:34mm;background:#E6E9E6;border-radius:1mm;overflow:hidden;display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-weight:700;font-size:3.2mm;letter-spacing:.1em;color:#8A948E}
+.p-img img{width:100%;height:100%;object-fit:cover}
+.p-nm{font-size:5.6mm;font-weight:900;line-height:1.3}
+.p-stats{display:flex;border:1.5px solid #0B0D0C;margin-top:2.5mm}
+.p-stat{flex:1;padding:1mm 2.5mm;border-right:1.5px solid #0B0D0C;min-width:0}
+.p-stat:last-child{border-right:0;flex:1.4}
+.p-stat .k{font-family:var(--disp);font-weight:700;font-size:2.8mm;letter-spacing:.12em;color:#59645E;white-space:nowrap}
+.p-stat .v{font-family:var(--disp);font-weight:800;font-size:8mm;line-height:1}
+.p-stat .v small{font-family:var(--jp);font-size:3.2mm;font-weight:700;margin-left:.5mm}
+.p-stat .v.jp{font-family:var(--jp);font-weight:900;font-size:4.2mm;line-height:8mm;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p-pt{font-size:3.9mm;margin-top:2.5mm;line-height:1.6}
+.p-pt b{font-weight:900;margin-right:2mm}
+.p-tags{display:flex;gap:1.5mm;margin-top:2mm}
+.p-tag{font-size:3mm;font-weight:900;border:1px solid #0B0D0C;padding:.2mm 2mm}
+.p-tag.ac{background:var(--ac);border-color:var(--ac)}
+.p-qr{display:flex;flex-direction:column;align-items:center;gap:1mm;font-family:var(--disp);font-weight:700;font-size:3.3mm;letter-spacing:.1em;color:#0B0D0C;text-decoration:none}
+.p-qr svg{width:24mm;height:24mm}
+.p-noqr{height:24mm;border:1px dashed #8A948E;display:flex;align-items:center;justify-content:center;font-size:3mm;color:#59645E}
+.p-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3.5mm}
+.p-card{border:1.5px solid #0B0D0C;padding:3mm;break-inside:avoid;display:flex;flex-direction:column;gap:2mm}
+.p-card .hd{display:flex;align-items:baseline;gap:2.5mm}
+.p-card .hd .p-no{font-size:9mm}
+.p-card .hd .p-nm{font-size:4.4mm}
+.p-card .bd{display:grid;grid-template-columns:26mm minmax(0,1fr) auto;gap:3mm;align-items:start}
+.p-card .p-img{height:18mm}
+.p-card .p-stat .v{font-size:6mm}
+.p-card .p-stat .v.jp{font-size:3.4mm;line-height:6mm}
+.p-card .p-stats{margin-top:0}
+.p-card .ft{display:flex;gap:2mm;align-items:flex-end;justify-content:space-between}
+.p-card .p-pt{font-size:3.3mm;margin-top:0;line-height:1.5}
+.p-card .p-qr svg{width:16mm;height:16mm}
+.p-card .p-qr{font-size:2.6mm}
+.p-sched{width:100%;border-collapse:collapse;margin-bottom:4mm}
+.p-sched th{font-family:var(--disp);font-weight:700;font-size:3mm;letter-spacing:.14em;color:#59645E;text-align:left;padding:1mm 2mm;border-bottom:1.5px solid #0B0D0C}
+.p-sched td{padding:1.6mm 2mm;border-bottom:1px solid #C9CFC8;font-size:3.6mm;vertical-align:middle}
+.p-sched .d{font-family:var(--disp);font-style:italic;font-weight:800;font-size:5.6mm;width:18mm}
+.p-sched .w{font-family:var(--disp);font-weight:700;font-size:3.6mm;letter-spacing:.1em;width:14mm}
+.p-bc{display:inline-flex;align-items:center;gap:1.5mm;margin-right:3mm;font-weight:700}
+.p-bc i{width:5mm;height:5mm;display:inline-flex;align-items:center;justify-content:center;background:var(--bc);font-family:var(--disp);font-style:italic;font-weight:800;font-size:3.6mm;color:#0B0D0C}
+.p-rest{font-family:var(--disp);font-style:italic;font-weight:800;letter-spacing:.1em;color:#8A948E}
+.p-bhead{display:flex;align-items:center;gap:3mm;margin:3mm 0 2.5mm;break-after:avoid}
+.p-bhead i{width:8mm;height:8mm;display:flex;align-items:center;justify-content:center;background:var(--bc);font-family:var(--disp);font-style:italic;font-weight:800;font-size:6mm;color:#0B0D0C}
+.p-bhead b{font-size:4.6mm;font-weight:900}
+.p-note{display:flex;border:1.5px solid #0B0D0C;break-inside:avoid;margin-top:4mm}
+.p-note .k{background:#0B0D0C;color:#fff;padding:3mm 3.5mm;min-width:30mm;display:flex;flex-direction:column;justify-content:center}
+.p-note .k b{font-family:var(--disp);font-style:italic;font-weight:800;font-size:5mm;line-height:1}
+.p-note .k small{font-size:2.8mm;margin-top:1mm}
+.p-note .t{flex:1;padding:3.5mm 4.5mm;font-size:4mm;line-height:1.7;white-space:pre-wrap;min-height:18mm}
+.p-note .web{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5mm;padding:2mm 3mm;border-left:1px solid #0B0D0C;font-family:var(--disp);font-weight:700;font-size:2.8mm;letter-spacing:.1em}
+.p-note .web svg{width:20mm;height:20mm}
+
+#print-root{display:none}
+@media print{
+  @page{size:A4 portrait;margin:0}
+  html,body{background:#fff!important}
+  body::before{display:none}
+  #app,#modal-root,#toast{display:none!important}
+  #print-root{display:block}
+  #print-root .sheet{margin:0;box-shadow:none;break-after:page}
+  #print-root .sheet:last-child{break-after:auto}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+</head>
+<body>
+<div id="app"></div>
+<div id="print-root" aria-hidden="true"></div>
+<div id="modal-root"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<script>
+(() => {
+'use strict';
+
+/* ================= helpers ================= */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-4);
+const clone = o => JSON.parse(JSON.stringify(o));
+const IS_LOCAL = location.protocol === 'file:';
+const IN_FRAME = (() => { try { return window.self !== window.top; } catch (e) { return true; } })();
+const pad = n => String(n).padStart(2, '0');
+const toStr = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const isDate = s => /^\d{4}-\d{2}-\d{2}$/.test(s || '');
+const parseD = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const today = () => toStr(new Date());
+const addDays = (s, n) => { const d = parseD(s); d.setDate(d.getDate() + n); return toStr(d); };
+const diffDays = (a, b) => Math.round((parseD(b) - parseD(a)) / 86400000);
+const md = s => { const d = parseD(s); return `${d.getMonth() + 1}/${d.getDate()}`; };
+const dotDate = s => (s || '').replace(/-/g, '.');
+const DOW_JP = '日月火水木金土';
+const DOW_EN = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+const dow = s => parseD(s).getDay();
+const two = n => pad(n);
+const LETTERS = 'ABCDEFGHIJ';
+
+const ACCENTS = {
+  yellow: { a: '#D7FF3A', t: '#181D12', d: '#12160D', label: 'イエロー' },
+  blue:   { a: '#3DB8FF', t: '#0F1E29', d: '#0B161E', label: 'ブルー' },
+  red:    { a: '#FF4757', t: '#281214', d: '#1D0D0F', label: 'レッド' }
+};
+const CATS = { strength: '筋トレ', fitness: 'フィットネス', function: '機能改善' };
+const TPL_GROUPS = { phase: '疾患・フェーズ別', strength: '筋トレ', fitness: 'フィットネス', function: '機能改善' };
+const UNITS = ['回', '秒', '分', '歩', 'm'];
+const LOADS = ['自重', 'kg', 'チューブ', '回転数', '自由'];
+const FREQS = ['毎日', '週5回', '週4回', '週3回', '週2回', '1日おき'];
+const TYPES = { fixed: { jp: '1週間・固定', en: 'FIXED WEEK' }, weekly: { jp: '1週間・曜日別', en: 'WEEKLY' } };
+const allDaily = items => items.every(i => !i.freq || i.freq === '毎日');
+
+function blockColors(accentKey) {
+  const a = (ACCENTS[accentKey] || ACCENTS.yellow).a;
+  let rest = ['#FF7A2F', '#B98CFF', '#3ED6FF', '#FF5FA2', '#D7FF3A', '#3DB8FF', '#FF4757'];
+  rest = rest.filter(c => c !== a);
+  if (accentKey === 'blue') rest = rest.filter(c => c !== '#3ED6FF');
+  if (accentKey === 'red') rest = rest.filter(c => c !== '#FF5FA2');
+  return [a, ...rest];
+}
+const bColor = (i, accentKey) => { const c = blockColors(accentKey); return c[i % c.length]; };
+
+/* ================= seed data (draft) ================= */
+// [id, name, cat, tags, reps, unit, sets, loadType, load, side, point]
+const SEED_EX = [
+  ['hip-lift','ヒップリフト','strength','お尻・体幹','15','回','3','自重','',0,'お尻を締めて持ち上げ、腰を反らさない'],
+  ['hip-lift-1','片脚ヒップリフト','strength','お尻・もも裏','10','回','3','自重','',1,'骨盤を水平に保ったまま上げる'],
+  ['squat','スクワット','strength','下肢','15','回','3','自重','',0,'膝とつま先の向きをそろえ、かかと重心で'],
+  ['split-squat','スプリットスクワット','strength','下肢','10','回','3','自重','',1,'前の膝が内側に入らないように'],
+  ['fwd-lunge','フォワードランジ','strength','下肢','10','回','3','自重','',1,'上体はまっすぐ、前の膝はつま先の真上'],
+  ['side-lunge','サイドランジ','strength','下肢・内転筋','10','回','3','自重','',1,'お尻を後ろに引いて沈む'],
+  ['calf-raise','カーフレイズ','strength','ふくらはぎ','20','回','3','自重','',0,'親指側で押し上げ、ゆっくり下ろす'],
+  ['calf-raise-1','片脚カーフレイズ','strength','ふくらはぎ','15','回','3','自重','',1,'足首が外に倒れないように'],
+  ['band-df','チューブ 足首背屈','strength','足関節','15','回','3','チューブ','赤',1,'つま先をすねに引き寄せ、ゆっくり戻す'],
+  ['band-ev','チューブ 足首外がえし','strength','足関節','15','回','3','チューブ','赤',1,'小指側を外に開く。膝は動かさない'],
+  ['clam','クラムシェル','strength','股関節','15','回','3','チューブ','黄',1,'骨盤が後ろに倒れないように'],
+  ['monster-walk','チューブ サイドウォーク','strength','股関節','10','歩','3','チューブ','黄',0,'膝を外に押し出したまま横へ進む'],
+  ['nordic','ノルディックハムストリング','strength','もも裏','5','回','3','自重','',0,'体をまっすぐ保ち、できるだけゆっくり倒れる'],
+  ['band-er','チューブ 肩外旋','strength','肩','15','回','3','チューブ','黄',1,'肘を体の横につけたまま外へ開く'],
+  ['push-up','プッシュアップ','strength','上半身・体幹','10','回','3','自重','',0,'頭からかかとまで一直線'],
+  ['side-plank','サイドプランク','function','体幹','30','秒','3','自重','',1,'頭からかかとまで一直線'],
+  ['front-plank','フロントプランク','function','体幹','30','秒','3','自重','',0,'お腹に力を入れ、腰を落とさない'],
+  ['dead-bug','デッドバグ','function','体幹','10','回','3','自重','',0,'腰を床に押しつけたまま手足を伸ばす'],
+  ['bird-dog','バードドッグ','function','体幹','10','回','3','自重','',1,'骨盤を傾けず、対角の手足を伸ばす'],
+  ['sl-balance','片脚バランス','function','バランス','30','秒','3','自重','',1,'膝を軽く曲げ、骨盤を水平に'],
+  ['sl-balance-foam','片脚バランス（不安定面）','function','バランス','30','秒','3','自重','',1,'クッションの上で。慣れたら目を閉じる'],
+  ['towel','タオルギャザー','function','足部','20','回','2','自重','',1,'足の指でタオルをたぐり寄せる'],
+  ['ankle-abc','足首アルファベット','function','足関節','1','回','2','自重','',1,'足首でAからZまで大きく描く'],
+  ['calf-stretch','カーフストレッチ','function','ふくらはぎ','30','秒','3','自重','',1,'かかとを床につけたまま、反動をつけない'],
+  ['ham-stretch','ハムストリングストレッチ','function','もも裏','30','秒','3','自重','',1,'背中を丸めず、骨盤から前に倒す'],
+  ['hip-flexor','股関節屈筋ストレッチ','function','股関節','30','秒','3','自重','',1,'お尻を締めて、腰を反らさない'],
+  ['open-book','オープンブック','function','胸椎','10','回','2','自重','',1,'胸から開き、目で手を追う'],
+  ['quad-set','クアドセッティング','function','大腿四頭筋','10','回','3','自重','',1,'膝裏でタオルを押して5秒キープ'],
+  ['slr','SLR（脚上げ）','function','大腿四頭筋','10','回','3','自重','',1,'膝を伸ばしたまま、反対の脚の高さまで'],
+  ['bike','エアロバイク','fitness','有酸素','20','分','1','回転数','60〜70',0,'会話できるくらいの強さで'],
+  ['jog','ジョギング','fitness','有酸素','20','分','1','自由','会話できるペース',0,'痛みが出たら歩きに切り替える'],
+  ['interval','インターバル走','fitness','無酸素','30','秒','8','自由','全力の8割',0,'1本ごとに60秒休む'],
+  ['skip','スキップ','fitness','アジリティ','20','m','4','自重','',0,'高く、リズムよく'],
+  ['jump-rope','縄跳び','fitness','有酸素','1','分','5','自重','',0,'つま先で軽く跳ぶ。1セットごとに30秒休む']
+];
+const SEED_TPL = [
+  ['t-ank1','足関節捻挫 フェーズ1','phase',['ankle-abc','towel','hip-lift']],
+  ['t-ank2','足関節捻挫 フェーズ2','phase',['band-df','band-ev','calf-raise','sl-balance']],
+  ['t-ank3','足関節捻挫 フェーズ3','phase',['calf-raise-1','sl-balance-foam','fwd-lunge','side-lunge','skip']],
+  ['t-acl1','ACL術後 0〜2週','phase',['quad-set','slr','ankle-abc','hip-lift']],
+  ['t-acl2','ACL術後 2〜6週','phase',['quad-set','slr','hip-lift','calf-raise','clam','sl-balance']],
+  ['t-lbp','腰痛 体幹基礎','phase',['dead-bug','bird-dog','front-plank','hip-flexor']],
+  ['t-lower','下肢 筋力基礎','strength',['squat','split-squat','hip-lift-1','calf-raise']],
+  ['t-ham','ハムストリング 予防','strength',['nordic','hip-lift-1','ham-stretch']],
+  ['t-shoulder','肩 腱板・肩甲帯','function',['band-er','open-book','push-up']],
+  ['t-aero','有酸素ベース','fitness',['bike','jog']],
+  ['t-hiit','無酸素インターバル','fitness',['interval','jump-rope']]
+];
+
+function exFromSeed(r) {
+  return { id: r[0], name: r[1], cat: r[2], tags: r[3], reps: r[4], unit: r[5], sets: r[6], loadType: r[7], load: r[8], side: !!r[9], point: r[10], video: '', start: 0, photo: '' };
+}
+function itemFromEx(ex) {
+  return { uid: uid(), exId: ex.id, name: ex.name, reps: ex.reps, unit: ex.unit, sets: ex.sets, loadType: ex.loadType, load: ex.load, side: !!ex.side, point: ex.point, video: ex.video || '', start: ex.start || 0, freq: '毎日' };
+}
+function defaultStore() {
+  const exercises = SEED_EX.map(exFromSeed);
+  const byId = Object.fromEntries(exercises.map(e => [e.id, e]));
+  const templates = SEED_TPL.map(t => ({ id: t[0], name: t[1], group: t[2], owner: '', items: t[3].map(id => itemFromEx(byId[id])) }));
+  return {
+    v: 1, exercises, templates,
+    headers: [{ id: 'h1', label: '標準', org: '[所属名]', logo: '' }],
+    plans: [],
+    settings: { accent: 'yellow', staff: '', viewerBase: '', webInitials: false, headerId: 'h1', seedNotice: true }
+  };
+}
+
+/* ================= storage ================= */
+const KEY = 'rehab-menu-tool.v1';
+function loadStore() {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (raw) {
+      const s = JSON.parse(raw);
+      if (s && s.v === 1) {
+        const d = defaultStore();
+        s.exercises = s.exercises || d.exercises; s.templates = s.templates || d.templates;
+        s.headers = (s.headers && s.headers.length) ? s.headers : d.headers;
+        s.plans = s.plans || []; s.settings = Object.assign(d.settings, s.settings || {});
+        return s;
+      }
+    }
+  } catch (e) { /* storage unavailable */ }
+  return defaultStore();
+}
+let S = loadStore();
+(function migrate() {
+  const seed = Object.fromEntries(SEED_EX.map(r => [r[0], r]));
+  const fix = (it, id) => { if (!it || it.loadType !== 'RPE') return; const r = seed[id]; if (r && r[7] !== 'RPE') { it.loadType = r[7]; it.load = r[8]; } else { it.loadType = '自由'; it.load = it.load ? `RPE ${it.load}` : ''; } };
+  S.exercises.forEach(e => fix(e, e.id));
+  S.templates.forEach(t => t.items.forEach(i => fix(i, i.exId)));
+  S.plans.forEach(p => { if (p.type === 'single') p.type = 'fixed'; (p.items || []).forEach(i => fix(i, i.exId)); (p.blocks || []).forEach(b => b.items.forEach(i => fix(i, i.exId))); });
+})();
+S.plans = S.plans.filter(p => p && (p.items || []).length + (p.blocks || []).reduce((a, b) => a + b.items.length, 0) > 0);
+let saveTimer = null;
+function saveNow() {
+  try { localStorage.setItem(KEY, JSON.stringify(S)); }
+  catch (e) { toast('この端末に保存できませんでした（容量不足か、保存が無効です）'); }
+}
+function save() { clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 250); }
+window.addEventListener('pagehide', () => { if (saveTimer) { clearTimeout(saveTimer); saveNow(); } });
+
+const exById = id => S.exercises.find(e => e.id === id);
+const tplById = id => S.templates.find(t => t.id === id);
+const planById = id => S.plans.find(p => p.id === id);
+const hdrById = id => S.headers.find(h => h.id === id) || S.headers[0];
+
+/* ================= plan model ================= */
+function newPlan(type) {
+  const t = today();
+  return { id: uid(), type, initials: '', created: t, updated: Date.now(), start: t, next: addDays(t, 7), headerId: S.settings.headerId, note: '', items: [], blocks: [{ id: uid(), name: 'メニューA', items: [] }], sched: [] };
+}
+function planDays(p) { if (!isDate(p.start) || !isDate(p.next)) return 7; return Math.max(1, Math.min(31, diffDays(p.start, p.next))); }
+function normSched(p) {
+  const n = planDays(p);
+  if (!Array.isArray(p.sched)) p.sched = [];
+  while (p.sched.length < n) p.sched.push([]);
+  p.sched.length = n;
+  const ids = new Set(p.blocks.map(b => b.id));
+  p.sched = p.sched.map(d => (d || []).filter(id => ids.has(id)));
+}
+function hasContent(p) { return p.items.length > 0 || p.blocks.some(b => b.items.length > 0); }
+function touch(p) { if (p) p.updated = Date.now(); save(); }
+function itemCount(p) { return p.type === 'weekly' ? p.blocks.reduce((a, b) => a + b.items.length, 0) : p.items.length; }
+
+/* ================= ui state ================= */
+const U = { view: 'home', planId: null, tplId: null, libTab: 'tpl', libCat: 'all', libQ: '', sheet: false, block: 0, homeQ: '', exQ: '', exCat: 'all', tplCat: 'all', tplMine: false, pvTab: 'print', link: '', linkFor: '', backTo: 'home' };
+const curPlan = () => planById(U.planId);
+const curTpl = () => tplById(U.tplId);
+function targetItems() {
+  if (U.view === 'tpl-edit') { const t = curTpl(); return t ? t.items : null; }
+  const p = curPlan(); if (!p) return null;
+  if (p.type === 'weekly') { U.block = Math.min(U.block, p.blocks.length - 1); return p.blocks[U.block].items; }
+  return p.items;
+}
+function touchTarget() { if (U.view === 'tpl-edit') save(); else touch(curPlan()); }
+
+/* ================= formatting ================= */
+function ytId(url) { const m = String(url || '').match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/))([\w-]{11})/); return m ? m[1] : null; }
+function parseStart(v) { v = String(v || '').trim(); if (!v) return 0; if (/^\d+$/.test(v)) return +v; const m = v.match(/^(\d+):(\d{1,2})$/); return m ? (+m[1]) * 60 + (+m[2]) : 0; }
+function fmtStart(sec) { sec = +sec || 0; return sec ? `${Math.floor(sec / 60)}:${pad(sec % 60)}` : ''; }
+function videoLink(it) { const u = String(it.video || '').trim(); if (!u) return ''; const id = ytId(u); const st = +it.start || 0; if (id) return `https://www.youtube.com/watch?v=${id}${st ? `&t=${st}s` : ''}`; return /^https?:\/\//.test(u) ? u : ''; }
+function thumbFor(it, allowPhoto = true) { if (allowPhoto && it.exId) { const ex = exById(it.exId); if (ex && ex.photo) return ex.photo; } const id = ytId(it.video); return id ? `https://img.youtube.com/vi/${id}/mqdefault.jpg` : ''; }
+function loadText(it) {
+  const v = String(it.load || '').trim();
+  switch (it.loadType) {
+    case '自重': return v ? `自重 ${v}` : '自重';
+    case 'kg': return v ? `${v}kg` : '—';
+    case 'チューブ': return v ? `${v}チューブ` : 'チューブ';
+    case '回転数': return v ? `回転数 ${v}` : '回転数';
+    default: return v || '—';
+  }
+}
+function repsKey(unit) { return ({ '回': 'REPS', '秒': 'TIME', '分': 'TIME', '歩': 'STEPS', 'm': 'DIST' })[unit] || 'REPS'; }
+function repsJp(unit) { return ({ '回': '回数', '秒': '時間', '分': '時間', '歩': '歩数', 'm': '距離' })[unit] || '回数'; }
+function shortSummary(it) { return `${it.reps || '-'}${it.unit === '回' ? '' : it.unit} × ${it.sets || '-'}`; }
+
+/* ================= pack / unpack (link payload) ================= */
+function packItem(i) { return [i.name, i.reps, i.unit, i.sets, i.loadType, i.load, i.side ? 1 : 0, i.point, i.video, +i.start || 0, i.freq || '']; }
+function unpackItem(a) { return { name: a[0] || '', reps: a[1] || '', unit: a[2] || '回', sets: a[3] || '', loadType: a[4] || '自重', load: a[5] || '', side: !!a[6], point: a[7] || '', video: a[8] || '', start: a[9] || 0, freq: a[10] || '' }; }
+function pack(p) {
+  const h = hdrById(p.headerId);
+  const o = { v: 1, t: p.type, s: p.start, n: p.next, c: p.created, o: h ? h.org : '', a: S.settings.accent, m: p.note || '' };
+  if (S.settings.webInitials && p.initials) o.i = p.initials;
+  if (p.type === 'weekly') {
+    normSched(p);
+    const used = p.blocks.filter(b => b.items.length);
+    o.b = used.map(b => [b.name, b.items.map(packItem), p.blocks.indexOf(b)]);
+    o.d = p.sched.map(day => day.map(id => used.findIndex(b => b.id === id)).filter(x => x >= 0));
+  } else o.x = p.items.map(packItem);
+  return o;
+}
+function unpack(o) {
+  const d = { type: o.t === 'weekly' ? 'weekly' : 'fixed', start: o.s, next: o.n, created: o.c, org: o.o || '', accent: ACCENTS[o.a] ? o.a : 'yellow', note: o.m || '', initials: o.i || '' };
+  if (d.type === 'weekly') { d.blocks = (o.b || []).map(b => ({ name: b[0], items: (b[1] || []).map(unpackItem), ci: b[2] ?? 0 })); d.sched = o.d || []; }
+  else d.items = (o.x || []).map(unpackItem);
+  return d;
+}
+function b64u(bytes) { let s = ''; for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+function unb64u(str) { str = str.replace(/-/g, '+').replace(/_/g, '/'); while (str.length % 4) str += '='; const bin = atob(str); const out = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i); return out; }
+async function encode(obj) {
+  const json = JSON.stringify(obj);
+  if (window.CompressionStream) {
+    try { const st = new Blob([json]).stream().pipeThrough(new CompressionStream('deflate-raw')); const buf = await new Response(st).arrayBuffer(); return 'z' + b64u(new Uint8Array(buf)); } catch (e) { /* fall through */ }
+  }
+  return 'j' + b64u(new TextEncoder().encode(json));
+}
+async function decode(code) {
+  const kind = code[0], bytes = unb64u(code.slice(1));
+  if (kind === 'z') { const st = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw')); return JSON.parse(await new Response(st).text()); }
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
+function viewerBase() { return (S.settings.viewerBase || '').trim() || (location.origin + location.pathname); }
+async function planLink(p) { return viewerBase() + '#p=' + await encode(pack(p)); }
+
+/* ================= QR ================= */
+function qrSVG(text, ec = 'M') {
+  if (!window.qrcode || !text) return '';
+  try {
+    const q = qrcode(0, ec); q.addData(text); q.make();
+    const n = q.getModuleCount(); let d = '';
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (q.isDark(r, c)) d += `M${c} ${r}h1v1h-1z`;
+    return `<svg viewBox="-2 -2 ${n + 4} ${n + 4}" shape-rendering="crispEdges" role="img" aria-label="QRコード"><rect x="-2" y="-2" width="${n + 4}" height="${n + 4}" fill="#fff"/><path d="${d}" fill="#0B0D0C"/></svg>`;
+  } catch (e) { return ''; }
+}
+
+/* ================= icons ================= */
+const IC = {
+  grip: '<svg width="12" height="18" viewBox="0 0 14 20" fill="currentColor" aria-hidden="true"><circle cx="4" cy="4" r="1.6"/><circle cx="10" cy="4" r="1.6"/><circle cx="4" cy="10" r="1.6"/><circle cx="10" cy="10" r="1.6"/><circle cx="4" cy="16" r="1.6"/><circle cx="10" cy="16" r="1.6"/></svg>',
+  x: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  search: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9AA39E" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>',
+  edit: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>',
+  play: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l12 7-12 7z" fill="#0B0D0C"/></svg>'
+};
+
+/* ================= toast / modal ================= */
+let toastT;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2200); }
+let modalHandlers = {};
+function openModal(html, handlers = {}) {
+  modalHandlers = handlers;
+  $('#modal-root').innerHTML = `<div class="modal-bg" data-act="modal-bg"><div class="modal" role="dialog" aria-modal="true">${html}</div></div>`;
+  const f = $('#modal-root [autofocus]') || $('#modal-root .modal input, #modal-root .modal textarea');
+  if (f && window.matchMedia('(min-width: 700px)').matches) f.focus();
+}
+function closeModal() { $('#modal-root').innerHTML = ''; modalHandlers = {}; }
+function confirmBox(msg, okLabel, onOk) {
+  openModal(`<h3>CONFIRM<small>確認</small></h3><p style="margin:0">${esc(msg)}</p><div class="modal-acts"><button class="btn" data-act="modal-close">キャンセル</button><button class="btn pri" data-act="modal-ok">${esc(okLabel)}</button></div>`, { ok: () => { closeModal(); onOk(); } });
+}
+function textModal(title, text, help) {
+  openModal(`<h3>${esc(title)}</h3>${help ? `<p class="help" style="margin:0">${esc(help)}</p>` : ''}<textarea class="field" id="tm-text" rows="8" readonly>${esc(text)}</textarea><div class="modal-acts"><button class="btn" data-act="modal-close">閉じる</button><button class="btn pri" data-act="tm-copy">コピー</button></div>`);
+  setTimeout(() => { const t = $('#tm-text'); if (t) t.select(); }, 30);
+}
+async function copyText(text, okMsg) {
+  try { await navigator.clipboard.writeText(text); toast(okMsg || 'コピーしました'); }
+  catch (e) { textModal('COPY', text, '自動でコピーできませんでした。下の文字を長押し（または選択）してコピーしてください。'); }
+}
+function downloadFile(name, text) {
+  if (IN_FRAME) { textModal('EXPORT', text, 'この表示環境ではファイルを保存できません。下の内容をコピーして、メモ帳などに貼り付けて保存してください。'); return; }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+  a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+}
+
+/* ================= render core ================= */
+let sortables = [];
+function applyAccent(key) {
+  const c = ACCENTS[key || S.settings.accent] || ACCENTS.yellow;
+  const r = document.documentElement.style;
+  r.setProperty('--ac', c.a); r.setProperty('--ac-tint', c.t); r.setProperty('--ac-deep', c.d);
+}
+function render() {
+  applyAccent();
+  const keep = {}; ['#libList', '#planMain'].forEach(s => { const el = $(s); if (el) keep[s] = el.scrollTop; });
+  const wy = window.scrollY;
+  sortables.forEach(s => { try { s.destroy(); } catch (e) {} }); sortables = [];
+  let html = '';
+  switch (U.view) {
+    case 'edit': html = viewEditor(); break;
+    case 'tpl-edit': html = viewEditor(); break;
+    case 'preview': html = viewPreview(); break;
+    case 'library': html = viewLibrary(); break;
+    case 'templates': html = viewTemplates(); break;
+    case 'settings': html = viewSettings(); break;
+    default: html = viewHome();
+  }
+  $('#app').innerHTML = html;
+  Object.entries(keep).forEach(([s, v]) => { const el = $(s); if (el) el.scrollTop = v; });
+  if (U.keepScroll) window.scrollTo(0, wy); U.keepScroll = false;
+  afterRender();
+}
+function go(view, opts = {}) { Object.assign(U, opts, { view }); U.sheet = false; render(); window.scrollTo(0, 0); }
+
+function brandHTML() {
+  return `<button class="brand" data-act="home" aria-label="ホームへ"><span class="mark"><span>R</span></span><span><b>REHAB MENU</b><small>メニュー作成</small></span></button>`;
+}
+function swatchesHTML() {
+  return `<div class="swatches" role="group" aria-label="アクセントカラー">${Object.entries(ACCENTS).map(([k, c]) => `<button class="sw ${S.settings.accent === k ? 'on' : ''}" style="background:${c.a}" data-act="accent" data-k="${k}" aria-label="${c.label}" aria-pressed="${S.settings.accent === k}"></button>`).join('')}</div>`;
+}
+
+/* ================= HOME ================= */
+function viewHome() {
+  const q = U.homeQ.trim().toLowerCase();
+  const plans = S.plans.filter(hasContent).sort((a, b) => b.updated - a.updated)
+    .filter(p => !q || (p.initials || '').toLowerCase().includes(q) || p.created.includes(q) || dotDate(p.created).includes(q) || md(p.created).includes(q));
+  const rows = plans.slice(0, 60).map(p => `
+    <div class="prow">
+      <div class="ini">${esc(p.initials || '—')}</div>
+      <div style="min-width:0">
+        <div class="ttl">${esc(TYPES[p.type].jp)} · ${itemCount(p)}種目</div>
+        <div class="meta num">作成 ${dotDate(p.created)} ／ 次回来院 ${isDate(p.next) ? md(p.next) : '—'}</div>
+      </div>
+      <div class="acts">
+        <button class="btn sm strong" data-act="open-plan" data-id="${p.id}">開く</button>
+        <button class="btn sm" data-act="dup-plan" data-id="${p.id}">複製して新規</button>
+        <button class="btn sm danger" data-act="del-plan" data-id="${p.id}">削除</button>
+      </div>
+    </div>`).join('');
+  return `
+  <header class="topbar gut">${brandHTML()}<span class="spacer"></span>${swatchesHTML()}<button class="btn sm" data-act="nav" data-v="settings">設定</button></header>
+  <main class="home gut">
+    ${S.settings.seedNotice ? `<div class="notice"><span>初期の種目とテンプレートはたたき台です。臨床的な内容は「種目ライブラリ」「テンプレート」で確認・調整してください。</span><button class="iconbtn plain" data-act="hide-notice" aria-label="閉じる">${IC.x}</button></div>` : ''}
+    <section>
+      <div class="sec-head"><h2 class="disp"><small>新しいプランを作る</small>NEW PLAN</h2></div>
+      <div class="newgrid">
+        ${['fixed', 'weekly'].map(t => `<button class="newcard" data-act="new-plan" data-type="${t}"><span class="go">+</span><span class="disp">${TYPES[t].en}</span><span class="jp">${TYPES[t].jp}</span><span class="desc">${({ fixed: '毎日やるメニューを次回来院まで。種目ごとに「週3回」なども指定できます', weekly: 'ブロック（下肢・体幹など）を日ごとに割り当て。休養日も入れられます' })[t]}</span></button>`).join('')}
+      </div>
+    </section>
+    <section>
+      <div class="sec-head"><h2 class="disp"><small>過去のプラン（この端末に保存）</small>HISTORY</h2>
+        <label class="search" style="flex:0 1 280px"><span class="sr">イニシャル・日付で検索</span><input class="field" id="home-q" data-in="homeQ" placeholder="イニシャル・日付で検索" value="${esc(U.homeQ)}">${IC.search}</label></div>
+      <div class="plist">${rows || `<div class="empty">${q ? '見つかりませんでした' : 'まだプランはありません。上のボタンから作成すると、ここに自動で保存されます。'}</div>`}</div>
+    </section>
+    <section>
+      <div class="sec-head"><h2 class="disp"><small>準備・管理</small>SETUP</h2></div>
+      <div class="menugrid">
+        <button class="menucard" data-act="nav" data-v="library"><span><b>EXERCISES</b><span>種目ライブラリ</span></span><span class="count">${S.exercises.length}</span></button>
+        <button class="menucard" data-act="nav" data-v="templates"><span><b>TEMPLATES</b><span>セットメニュー</span></span><span class="count">${S.templates.length}</span></button>
+        <button class="menucard" data-act="nav" data-v="settings"><span><b>SETTINGS</b><span>所属ヘッダー・共有・バックアップ</span></span><span class="count">${S.headers.length}</span></button>
+      </div>
+    </section>
+  </main>`;
+}
+
+/* ================= EDITOR ================= */
+function libHTML() {
+  const q = U.libQ.trim().toLowerCase();
+  let list = '';
+  if (U.libTab === 'tpl') {
+    const cats = Object.entries(TPL_GROUPS);
+    const tpls = S.templates.filter(t => (U.libCat === 'all' || t.group === U.libCat) && (!q || t.name.toLowerCase().includes(q)));
+    list = `<div class="lib-chips">${[['all', 'すべて'], ...cats].map(([k, l]) => `<button class="chip ${U.libCat === k ? 'on' : ''}" data-act="lib-cat" data-k="${k}">${l}</button>`).join('')}</div>
+      <div class="lib-list" id="libList">${tpls.map(t => `
+        <div class="lrow tpl" data-tpl="${t.id}">
+          <span class="grip">${IC.grip}</span>
+          <div class="lm"><b>${esc(t.name)}</b><span>${t.items.length} EXERCISES ${t.owner ? `<span class="owner">· ${esc(t.owner)}</span>` : ''}</span></div>
+          ${U.view === 'edit' ? `<button class="iconbtn plain" data-act="lib-tpl-edit" data-id="${t.id}" aria-label="${esc(t.name)}を編集">${IC.edit}</button>` : ''}<button class="iconbtn" data-act="add-tpl" data-id="${t.id}" aria-label="${esc(t.name)}をまとめて追加">+</button>
+        </div>`).join('') || '<div class="empty">該当するテンプレートがありません</div>'}</div>`;
+  } else {
+    const ex = S.exercises.filter(e => (U.libCat === 'all' || e.cat === U.libCat) && (!q || e.name.toLowerCase().includes(q) || (e.tags || '').toLowerCase().includes(q)));
+    list = `<div class="lib-chips">${[['all', 'すべて'], ...Object.entries(CATS)].map(([k, l]) => `<button class="chip ${U.libCat === k ? 'on' : ''}" data-act="lib-cat" data-k="${k}">${l}</button>`).join('')}</div>
+      <div class="lib-list" id="libList">${ex.map(e => { const th = thumbFor({ exId: e.id, video: e.video }); return `
+        <div class="lrow" data-ex="${e.id}">
+          <span class="grip">${IC.grip}</span>
+          <div class="lt">${th ? `<img src="${esc(th)}" alt="" loading="lazy">` : 'PHOTO'}</div>
+          <div class="lm"><b>${esc(e.name)}</b><span class="num">${esc(shortSummary(e))}</span></div>
+          <button class="iconbtn plain" data-act="lib-ex-edit" data-id="${e.id}" aria-label="${esc(e.name)}を編集">${IC.edit}</button><button class="iconbtn" data-act="add-ex" data-id="${e.id}" aria-label="${esc(e.name)}を追加">+</button>
+        </div>`; }).join('') || '<div class="empty">該当する種目がありません</div>'}</div>`;
+  }
+  return `<aside class="lib gut ${U.sheet ? 'open' : ''}" aria-label="テンプレートと種目">
+    <div class="lib-head"><span class="lbl">ADD 追加</span><button class="btn sm" data-act="sheet-close">閉じる</button></div>
+    <div class="tabs" role="tablist"><button class="${U.libTab === 'tpl' ? 'on' : ''}" data-act="lib-tab" data-k="tpl" role="tab">TEMPLATES</button><button class="${U.libTab === 'ex' ? 'on' : ''}" data-act="lib-tab" data-k="ex" role="tab">EXERCISES</button></div>
+    <label class="search"><span class="sr">検索</span><input class="field" id="lib-q" data-in="libQ" placeholder="${U.libTab === 'tpl' ? 'テンプレートを検索' : '種目・部位を検索'}" value="${esc(U.libQ)}">${IC.search}</label>
+    ${list}
+    <p class="help" style="margin:0">鉛筆マークで中身を編集できます。編集しても、作成済みのプランは変わりません。</p>
+  </aside>`;
+}
+
+function itemRowHTML(it, i, mode) {
+  const th = thumbFor(it);
+  const unitSel = `<select class="field unit" data-f="unit" aria-label="単位">${UNITS.map(u => `<option ${it.unit === u ? 'selected' : ''}>${u}</option>`).join('')}</select>`;
+  return `<li class="item" data-uid="${it.uid}">
+    <span class="grip drag" aria-label="ドラッグで並べ替え">${IC.grip}</span>
+    <span class="no">${two(i + 1)}</span>
+    <div class="th">${th ? `<img src="${esc(th)}" alt="">` : (it.video ? 'VIDEO' : 'PHOTO')}</div>
+    <div class="info"><div class="nm">${esc(it.name)}</div><input class="field pt" data-f="point" value="${esc(it.point)}" placeholder="ポイント・注意点" aria-label="${esc(it.name)}のポイント"></div>
+    <div class="flds">
+      <label class="flab"><span>${repsKey(it.unit)}</span><span class="step"><button data-act="step" data-f="reps" data-d="-1" aria-label="減らす">−</button><input class="field big num" data-f="reps" value="${esc(it.reps)}" inputmode="decimal" aria-label="回数"><button data-act="step" data-f="reps" data-d="1" aria-label="増やす">+</button></span></label>
+      <label class="flab"><span>UNIT</span>${unitSel}</label>
+      <label class="flab"><span>SETS</span><input class="field big num" data-f="sets" value="${esc(it.sets)}" inputmode="numeric" aria-label="セット数"></label>
+      <label class="flab"><span>LOAD</span><span class="step"><select class="field lt-sel" data-f="loadType" aria-label="負荷の種類">${LOADS.map(l => `<option ${it.loadType === l ? 'selected' : ''}>${l}</option>`).join('')}</select><input class="field lv" data-f="load" value="${esc(it.load)}" placeholder="${({ kg: '例 5', 'チューブ': '色', '回転数': '例 60', '自由': '内容', '自重': '' })[it.loadType] || ''}" aria-label="負荷の値"></span></label>
+      ${mode === 'fixed' ? `<label class="flab"><span>FREQ</span><select class="field fq" data-f="freq" aria-label="頻度">${FREQS.map(f => `<option ${it.freq === f ? 'selected' : ''}>${f}</option>`).join('')}</select></label>` : ''}
+      <label class="sidechk"><input type="checkbox" data-f="side" ${it.side ? 'checked' : ''}>左右</label>
+    </div>
+    <button class="iconbtn plain" data-act="rm-item" aria-label="${esc(it.name)}を削除">${IC.x}</button>
+  </li>`;
+}
+function itemsHTML(items, mode) {
+  const isPhone = window.matchMedia('(max-width: 900px)').matches;
+  return `<ul class="items" id="planList">${items.map((it, i) => itemRowHTML(it, i, mode)).join('')}${items.length ? '' : `<li class="dropzone"><b>DROP HERE</b><span>${isPhone ? '下の「＋ 追加」からテンプレートや種目を選んでください' : '左のテンプレート・種目をここへドラッグ、または＋で追加'}</span></li>`}</ul>`;
+}
+
+function viewEditor() {
+  if (U.view === 'tpl-edit') return viewTplEditor();
+  const p = curPlan(); if (!p) { U.view = 'home'; return viewHome(); }
+  const days = planDays(p);
+  const hdrOpts = S.headers.map(h => `<option value="${h.id}" ${p.headerId === h.id ? 'selected' : ''}>${esc(h.label || h.org)}</option>`).join('');
+  let main = '';
+  if (p.type === 'weekly') {
+    normSched(p);
+    const b = p.blocks[U.block] || p.blocks[0];
+    main = `
+      <div class="plan-head"><div><div class="jp">ブロックを作って、日ごとに割り当てます</div><h1 class="disp">WEEKLY PLAN</h1></div><span class="mute" style="font-size:12px">${days}日間 · ${md(p.start)}〜${md(addDays(p.start, days - 1))}</span></div>
+      <div class="btabs">${p.blocks.map((bl, i) => `<button class="btab ${i === U.block ? 'on' : ''}" style="--bc:${bColor(i, S.settings.accent)}" data-act="sel-block" data-i="${i}"><span class="bl">${LETTERS[i]}</span><span class="bn">${esc(bl.name)}<small>${bl.items.length}</small></span></button>`).join('')}
+        ${p.blocks.length < 6 ? '<button class="btn sm" data-act="add-block">+ ブロック</button>' : ''}</div>
+      <div class="bedit"><label class="inline-lab">BLOCK ${LETTERS[U.block]}<input class="field" data-bf="name" value="${esc(b.name)}" aria-label="ブロック名"></label>${p.blocks.length > 1 ? '<button class="btn sm danger" data-act="del-block">このブロックを削除</button>' : ''}</div>
+      ${itemsHTML(b.items, 'weekly')}
+      <section class="sched">
+        <div class="sched-head"><div><div class="lbl">日ごとの割り当て · タップで切り替え</div><h2 class="disp">SCHEDULE</h2></div>
+          <div class="toolrow"><label class="inline-lab">最初の<select class="field" id="rep-n">${[1, 2, 3, 4].map(n => `<option ${n === 2 ? 'selected' : ''}>${n}</option>`).join('')}</select>日を</label><button class="btn sm" data-act="repeat-days">繰り返す</button><button class="btn sm" data-act="clear-days">全部クリア</button></div></div>
+        <div class="days-wrap"><div class="days">${p.sched.map((day, di) => { const ds = addDays(p.start, di); const rest = day.length === 0; return `
+          <div class="day ${rest ? 'rest' : ''}"><div class="dh"><b class="num">${parseD(ds).getDate()}</b><span>${DOW_EN[dow(ds)]}</span></div>
+            ${p.blocks.map((bl, bi) => `<button class="bchip ${day.includes(bl.id) ? 'on' : ''}" style="--bc:${bColor(bi, S.settings.accent)}" data-act="toggle-day" data-d="${di}" data-b="${bl.id}" aria-pressed="${day.includes(bl.id)}"><i>${LETTERS[bi]}</i>${esc(bl.name)}</button>`).join('')}
+            ${rest ? `<div class="restlbl">REST<small>休養日</small></div>` : ''}
+          </div>`; }).join('')}</div></div>
+      </section>`;
+  } else {
+    main = `
+      <div class="plan-head"><div><div class="jp">次回来院まで · 頻度は種目ごとに変更できます</div><h1 class="disp">MENU<em>${two(p.items.length)}</em></h1></div><span class="mute" style="font-size:12px">ドラッグで並べ替え · 数字はその場で変更</span></div>
+      ${itemsHTML(p.items, p.type)}`;
+  }
+  return `
+  <div class="ed">
+    <header class="topbar gut ed-top">
+      <button class="back" data-act="home">‹ HOME</button>
+      <div class="ed-fields">
+        <label class="inline-lab">ATHLETE<input class="field ini" data-pf="initials" value="${esc(p.initials)}" placeholder="K.T" maxlength="8" aria-label="イニシャル"></label>
+        <div class="seg" role="group" aria-label="プランの種類">${Object.entries(TYPES).map(([k, t]) => `<button class="${p.type === k ? 'on' : ''}" data-act="set-type" data-k="${k}">${t.jp}</button>`).join('')}</div>
+        <label class="inline-lab">START<input type="date" class="field" data-pf="start" value="${esc(p.start)}"></label>
+        <label class="inline-lab">NEXT VISIT<input type="date" class="field" data-pf="next" value="${esc(p.next)}"></label>
+        <span class="daysbadge num">${days} DAYS</span>
+      </div>
+      <div class="ed-actions"><button class="btn" data-act="save-as-tpl">テンプレ保存</button><button class="btn pri" data-act="preview">プレビュー・渡す</button></div>
+    </header>
+    <div class="ed-body">
+      ${libHTML()}
+      <main class="plan gut" id="planMain">
+        ${main}
+        <label class="notebox"><span class="lbl">COACH'S NOTE　担当者からのひとこと</span><textarea class="field" rows="2" data-pf="note" placeholder="例：痛みが3/10を超えたら中止して連絡してください">${esc(p.note)}</textarea></label>
+        <div class="foot-info"><label class="inline-lab" style="letter-spacing:.06em">HEADER<select class="field" data-pf="headerId" aria-label="ヘッダー">${hdrOpts}</select></label><span>この端末に自動保存 · ${esc(p.initials || 'イニシャル未入力')} ${dotDate(p.created)}</span></div>
+      </main>
+    </div>
+    <div class="mbar gut"><button class="btn strong" data-act="sheet-open">＋ 追加</button><button class="btn pri" data-act="preview">プレビュー・渡す</button></div>
+  </div>`;
+}
+
+function viewTplEditor() {
+  const t = curTpl(); if (!t) { U.view = 'templates'; return viewTemplates(); }
+  return `
+  <div class="ed">
+    <header class="topbar gut ed-top">
+      <button class="back" data-act="tpl-done">${U.tplReturn ? '‹ プランに戻る' : '‹ TEMPLATES'}</button>
+      <div class="ed-fields">
+        <label class="inline-lab">NAME<input class="field" style="width:220px" data-tf="name" value="${esc(t.name)}" aria-label="テンプレート名"></label>
+        <label class="inline-lab">GROUP<select class="field" data-tf="group">${Object.entries(TPL_GROUPS).map(([k, l]) => `<option value="${k}" ${t.group === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+      </div>
+      <div class="ed-actions"><button class="btn pri" data-act="tpl-done">${U.tplReturn ? '完了してプランに戻る' : '完了'}</button></div>
+    </header>
+    <div class="ed-body">
+      ${libHTML()}
+      <main class="plan gut" id="planMain">
+        <div class="plan-head"><div><div class="jp">テンプレートの中身を編集（自動保存）</div><h1 class="disp">TEMPLATE<em>${two(t.items.length)}</em></h1></div></div>
+        ${itemsHTML(t.items, 'tpl')}
+      </main>
+    </div>
+    <div class="mbar gut"><button class="btn strong" data-act="sheet-open">＋ 追加</button><button class="btn pri" data-act="tpl-done">${U.tplReturn ? '完了してプランに戻る' : '完了'}</button></div>
+  </div>`;
+}
+
+/* ================= PREVIEW ================= */
+function viewPreview() {
+  const p = curPlan(); if (!p) { U.view = 'home'; return viewHome(); }
+  const ready = U.linkFor === p.id + ':' + p.updated && U.link;
+  const long = ready && U.link.length > 2000;
+  return `
+  <header class="topbar gut"><button class="back" data-act="back-edit">‹ 編集に戻る</button><span class="spacer"></span>
+    <div class="seg" role="tablist"><button class="${U.pvTab === 'print' ? 'on' : ''}" data-act="pv-tab" data-k="print">A4印刷</button><button class="${U.pvTab === 'web' ? 'on' : ''}" data-act="pv-tab" data-k="web">スマホ表示</button></div>
+  </header>
+  <div class="pv gut">
+    <div class="pv-main">
+      ${U.pvTab === 'print' ? `<div class="sheet-wrap" id="sheetWrap">${printHTML(p, ready ? U.link : '')}</div>` : `<div class="phone"><div class="phone-in" id="phoneIn">${viewerHTML(unpack(pack(p)), U.pvDay ?? null)}</div></div>`}
+    </div>
+    <aside class="pv-side">
+      ${IN_FRAME ? `<div class="frame-note">この画面はお試し表示です。印刷・PDF保存と、患者さんに送るリンクは、ツールを公開したページ（GitHub Pagesなど）で開くと使えます。</div>` : ''}
+      <div class="card">
+        <h2>PRINT<small>A4・1枚</small></h2>
+        <button class="btn pri" data-act="print" ${IN_FRAME ? 'disabled' : ''}>印刷・PDFに保存</button>
+        <p class="help" style="margin:0">PDFに保存すると、QRコードをタップして動画に飛べるファイルになります。</p>
+      </div>
+      <div class="card linkbox">
+        <h2>LINK<small>スマホで見るページ</small></h2>
+        ${IS_LOCAL && !(S.settings.viewerBase || '').trim() ? `<p class="help" style="margin:0">今はこのPCの中だけで動かしているため、患者さんに送るリンクは使えません（PCの中のファイルは外から開けないため）。いまは印刷・PDFで渡してください。ツールをGitHub Pagesなどで公開すると、ここからリンクとQRで送れるようになります。</p><p class="help" style="margin:0">患者さんのスマホでどう見えるかは、上の「スマホ表示」で確認できます。</p>` : ready ? `
+          <div class="qrbig">${qrSVG(U.link, long ? 'L' : 'M') || '<span style="color:#0B0D0C;font-size:12px;padding:20px">内容が多すぎてQRにできません。リンクで送ってください</span>'}</div>
+          <p class="help" style="margin:0">患者さんのスマホでこのQRを読み取ると、その場で開けます。</p>
+          <div class="toolrow"><button class="btn pri" data-act="copy-link">リンクをコピー</button><a class="btn" href="https://line.me/R/share?text=${encodeURIComponent('トレーニングメニューです\n' + U.link)}" target="_blank" rel="noopener">LINEで送る</a>${navigator.share && !IN_FRAME ? '<button class="btn" data-act="share-link">共有</button>' : ''}</div>
+          <p class="help" style="margin:0">リンクの中にメニューが入っているので、サーバーには何も保存されません。${S.settings.webInitials ? 'イニシャルを含みます。' : '氏名・イニシャルは含みません。'}</p>`
+        : '<p class="help">リンクを作成しています…</p>'}
+      </div>
+    </aside>
+  </div>`;
+}
+
+/* ================= print sheet ================= */
+function pImg(it) { const th = thumbFor(it); return `<div class="p-img">${th ? `<img src="${esc(th)}" alt="">` : 'PHOTO'}</div>`; }
+function pQR(it, cls = '') { const l = videoLink(it); if (!l) return `<div class="p-noqr ${cls}">動画なし</div>`; return `<a class="p-qr" href="${esc(l)}">${qrSVG(l)}<span>▶ ${it.start ? fmtStart(it.start) + '〜' : 'WATCH'}</span></a>`; }
+function pStats(it, compact) {
+  return `<div class="p-stats">
+    <div class="p-stat"><div class="k">${repsKey(it.unit)}${compact ? '' : ' ' + repsJp(it.unit)}</div><div class="v">${esc(it.reps || '-')}${it.unit !== '回' ? `<small>${esc(it.unit)}</small>` : ''}</div></div>
+    <div class="p-stat"><div class="k">SETS${compact ? '' : ' セット'}</div><div class="v">${esc(it.sets || '-')}</div></div>
+    <div class="p-stat"><div class="k">LOAD${compact ? '' : ' 負荷'}</div><div class="v jp">${esc(loadText(it))}</div></div>
+  </div>`;
+}
+function pTags(it, fixed) { const t = []; if (fixed && it.freq) t.push(`<span class="p-tag ac">${esc(it.freq)}</span>`); if (it.side) t.push('<span class="p-tag">左右それぞれ</span>'); return t.length ? `<div class="p-tags">${t.join('')}</div>` : ''; }
+function pRowLarge(it, i, fixed) {
+  return `<div class="p-row"><div class="p-no">${two(i + 1)}</div>${pImg(it)}<div><div class="p-nm">${esc(it.name)}</div>${pStats(it)}${it.point ? `<div class="p-pt"><b>POINT</b>${esc(it.point)}</div>` : ''}${pTags(it, fixed)}</div>${pQR(it)}</div>`;
+}
+function pCard(it, i, fixed) {
+  return `<div class="p-card"><div class="hd"><span class="p-no">${two(i + 1)}</span><span class="p-nm">${esc(it.name)}</span></div>
+    ${pStats(it, true)}<div class="bd">${pImg(it)}<div style="min-width:0">${it.point ? `<div class="p-pt"><b>POINT</b>${esc(it.point)}</div>` : ''}${pTags(it, fixed)}</div>${videoLink(it) ? pQR(it) : ''}</div></div>`;
+}
+function printHTML(p, link) {
+  const h = hdrById(p.headerId) || {};
+  const days = planDays(p);
+  const end = addDays(p.start, days - 1);
+  const badge = p.type === 'weekly' ? `曜日別 · ${days}日間` : allDaily(p.items) ? `毎日 · ${days}日間` : `頻度つき · ${days}日間`;
+  let body = '';
+  if (p.type === 'weekly') {
+    normSched(p);
+    const colorOf = b => bColor(p.blocks.indexOf(b), S.settings.accent);
+    const rows = p.sched.map((day, di) => { const ds = addDays(p.start, di); const bl = day.map(id => p.blocks.find(b => b.id === id)).filter(Boolean);
+      return `<tr><td class="d num">${md(ds)}</td><td class="w">${DOW_EN[dow(ds)]}</td><td>${bl.length ? bl.map(b => `<span class="p-bc" style="--bc:${colorOf(b)}"><i>${LETTERS[p.blocks.indexOf(b)]}</i>${esc(b.name)}</span>`).join('') : '<span class="p-rest">REST 休養日</span>'}</td></tr>`; }).join('');
+    body = `<table class="p-sched"><thead><tr><th>DATE</th><th>DAY</th><th>MENU メニュー</th></tr></thead><tbody>${rows}</tbody></table>` +
+      p.blocks.filter(b => b.items.length).map(b => `<div class="p-bhead" style="--bc:${colorOf(b)}"><i>${LETTERS[p.blocks.indexOf(b)]}</i><b>${esc(b.name)}</b></div><div class="p-grid">${b.items.map((it, i) => pCard(it, i, false)).join('')}</div>`).join('');
+  } else {
+    const fixed = !allDaily(p.items);
+    body = p.items.length <= 3 ? p.items.map((it, i) => pRowLarge(it, i, fixed)).join('') : `<div class="p-grid">${p.items.map((it, i) => pCard(it, i, fixed)).join('')}</div>`;
+    if (!p.items.length) body = '<div class="p-noqr" style="height:40mm">種目がまだありません</div>';
+  }
+  const webQR = link && link.length <= 1800 && !link.startsWith('file:') ? qrSVG(link, 'L') : '';
+  return `<div class="sheet">
+    <div class="p-top"><div class="p-org">${h.logo ? `<div class="p-logo"><img src="${esc(h.logo)}" alt=""></div>` : ''}<span>${esc(h.org || '')}</span></div>
+      <div class="p-dates"><div><div class="k">DATE 作成日</div><div class="v num">${dotDate(p.created)}</div></div><div><div class="k">NEXT VISIT 次回来院日</div><div class="v num">${isDate(p.next) ? dotDate(p.next) : '—'} <small>${isDate(p.next) ? `（${DOW_JP[dow(p.next)]}）` : ''}</small></div></div></div></div>
+    <div class="p-title"><div><h1>TRAINING MENU</h1><div class="p-sub"><span class="p-badge">${esc(badge)}</span>　トレーニングメニュー　<span class="num" style="font-weight:400">${md(p.start)}〜${md(end)}</span></div></div>
+      <div class="p-name">${p.initials ? `${esc(p.initials)} <small>さん</small>` : `<small>NAME</small><span class="blank"></span>`}</div></div>
+    <div class="p-body">${body}</div>
+    <div class="p-note"><div class="k"><b>COACH'S NOTE</b><small>担当者からのひとこと</small></div><div class="t">${esc(p.note || '')}</div>${webQR ? `<a class="web" href="${esc(link)}" style="color:#0B0D0C;text-decoration:none">${webQR}<span>WEB版</span></a>` : ''}</div>
+  </div>`;
+}
+
+/* ================= patient viewer ================= */
+function vStats(it) {
+  return `<div class="v-stats">
+    <div><span>${repsKey(it.unit)}</span><strong class="acc">${esc(it.reps || '-')}${it.unit !== '回' ? `<small>${esc(it.unit)}</small>` : ''}</strong></div>
+    <div><span>SETS</span><strong>${esc(it.sets || '-')}</strong></div>
+    <div><span>LOAD</span><strong class="jp">${esc(loadText(it))}</strong></div></div>`;
+}
+function vCard(it, i, fixed) {
+  const id = ytId(it.video), link = videoLink(it);
+  const pills = []; if (fixed && it.freq) pills.push(`<span class="v-pill ac">${esc(it.freq)}</span>`); if (it.side) pills.push('<span class="v-pill">左右それぞれ</span>');
+  const media = id ? `<a class="v-media" href="${esc(link)}" target="_blank" rel="noopener" aria-label="${esc(it.name)}の動画を再生"><img src="https://img.youtube.com/vi/${id}/mqdefault.jpg" alt=""><span class="play">${IC.play}</span><span class="vn">${two(i + 1)}</span>${it.start ? `<span class="st">${fmtStart(it.start)}から再生</span>` : ''}</a>` : '';
+  return `<div class="v-card">${media}<div class="v-body">
+    <div class="v-title">${id ? '' : `<span class="vn">${two(i + 1)}</span>`}<b>${esc(it.name)}</b></div>
+    ${vStats(it)}${pills.length ? `<div class="v-pills">${pills.join('')}</div>` : ''}
+    ${it.point ? `<div class="v-point">${esc(it.point)}</div>` : ''}
+    ${!id && link ? `<a class="btn sm strong v-vlink" href="${esc(link)}" target="_blank" rel="noopener">▶ 動画を見る</a>` : ''}
+  </div></div>`;
+}
+function viewerDays(d) { if (!isDate(d.start) || !isDate(d.next)) return 1; return Math.max(1, Math.min(31, diffDays(d.start, d.next))); }
+function initialDay(d) { const n = viewerDays(d); const k = isDate(d.start) ? diffDays(d.start, today()) : 0; return k >= 0 && k < n ? k : 0; }
+function viewerHTML(d, dayIdx) {
+  applyAccent(d.accent);
+  const n = viewerDays(d), end = isDate(d.start) ? addDays(d.start, n - 1) : '';
+  let content = '';
+  if (d.type === 'weekly') {
+    const di = dayIdx ?? initialDay(d);
+    const tk = isDate(d.start) ? diffDays(d.start, today()) : -1;
+    const tabs = Array.from({ length: n }, (_, i) => { const ds = addDays(d.start, i); const rest = !(d.sched[i] || []).length;
+      return `<button class="v-tab ${rest ? 'rest' : ''} ${i === di ? 'on' : ''}" data-act="vday" data-d="${i}" role="tab" aria-selected="${i === di}"><small>${i === tk ? 'TODAY' : DOW_EN[dow(ds)]}</small><b class="num">${rest ? 'REST' : parseD(ds).getDate()}</b></button>`; }).join('');
+    const today_ = (d.sched[di] || []).map(x => d.blocks[x]).filter(Boolean);
+    const count = today_.reduce((a, b) => a + b.items.length, 0);
+    const ds = addDays(d.start, di);
+    const body = today_.length ? `<div class="v-sum">${md(ds)}（${DOW_JP[dow(ds)]}）は <b>${count}</b> 種目</div>` + today_.map(b => `<div class="v-block" style="--bc:${bColor(b.ci, d.accent)}"><i>${LETTERS[b.ci] || ''}</i><b>${esc(b.name)}</b></div>` + b.items.map((it, i) => vCard(it, i, false)).join('')).join('')
+      : `<div class="v-rest"><div class="disp">REST</div><p class="mute" style="margin:6px 0 0">${md(ds)}（${DOW_JP[dow(ds)]}）は休養日です</p></div>`;
+    content = `<div class="v-tabs" role="tablist" aria-label="日付">${tabs}</div>${body}`;
+  } else {
+    const daily = allDaily(d.items);
+    content = `<div class="v-sum"><b>${d.items.length}</b> 種目 · ${daily ? '毎日' : '頻度の通りに'}行ってください</div>` + d.items.map((it, i) => vCard(it, i, !daily)).join('');
+  }
+  return `<div class="vw gut">
+    <div><div class="v-org">${esc(d.org)}</div>
+      <h1 class="disp">TRAINING<br><span>MENU</span></h1>
+      <div class="v-period">${isDate(d.start) ? `<b class="num">${md(d.start)} – ${md(end)}</b>` : ''}${isDate(d.next) ? `<i>次回来院 ${md(d.next)}（${DOW_JP[dow(d.next)]}）</i>` : ''}${d.initials ? `<b>${esc(d.initials)}</b>` : ''}</div></div>
+    ${d.note ? `<div class="v-note"><div class="lbl">COACH'S NOTE</div><p>${esc(d.note)}</p></div>` : ''}
+    ${content}
+    <div class="v-foot">痛みや腫れが強くなったときは中止して、担当者に連絡してください</div>
+  </div>`;
+}
+
+/* ================= LIBRARY ================= */
+function viewLibrary() {
+  const q = U.exQ.trim().toLowerCase();
+  const ex = S.exercises.filter(e => (U.exCat === 'all' || e.cat === U.exCat) && (!q || e.name.toLowerCase().includes(q) || (e.tags || '').toLowerCase().includes(q)));
+  return `
+  <header class="topbar gut"><button class="back" data-act="home">‹ HOME</button><span class="spacer"></span><button class="btn pri" data-act="ex-new">+ 種目を追加</button></header>
+  <main class="page gut">
+    <h1 class="disp"><small>種目ライブラリ · ${S.exercises.length}種目</small>EXERCISES</h1>
+    <div class="toolrow"><label class="search"><span class="sr">検索</span><input class="field" id="ex-q" data-in="exQ" placeholder="種目名・部位で検索" value="${esc(U.exQ)}">${IC.search}</label>
+      <div class="lib-chips">${[['all', 'すべて'], ...Object.entries(CATS)].map(([k, l]) => `<button class="chip ${U.exCat === k ? 'on' : ''}" data-act="ex-cat" data-k="${k}">${l}</button>`).join('')}</div></div>
+    <div class="plist">${ex.map(e => { const th = thumbFor({ exId: e.id, video: e.video }); return `
+      <div class="exrow"><div class="lt">${th ? `<img src="${esc(th)}" alt="">` : 'PHOTO'}</div>
+        <div style="min-width:0"><b>${esc(e.name)}</b><div class="meta"><span class="tag">${CATS[e.cat] || ''}</span>${e.tags ? `<span class="tag">${esc(e.tags)}</span>` : ''}<span class="num">${esc(shortSummary(e))} · ${esc(loadText(e))}${e.side ? ' · 左右' : ''}</span>${e.video ? ' · 動画あり' : ''}${e.photo ? ' · 写真あり' : ''}</div></div>
+        <button class="btn sm" data-act="ex-edit" data-id="${e.id}">編集</button></div>`; }).join('') || '<div class="empty">該当する種目がありません</div>'}</div>
+  </main>`;
+}
+let exDraft = null;
+function openExModal(ex) {
+  exDraft = ex ? clone(ex) : { id: '', name: '', cat: 'strength', tags: '', reps: '10', unit: '回', sets: '3', loadType: '自重', load: '', side: false, point: '', video: '', start: 0, photo: '' };
+  const d = exDraft;
+  openModal(`
+    <h3>${ex ? 'EDIT' : 'NEW'}<small>${ex ? '種目を編集' : '種目を追加'}</small></h3>
+    <label class="flab"><span>NAME 種目名</span><input class="field" id="ex-name" value="${esc(d.name)}" autofocus></label>
+    <div class="row"><label class="flab"><span>CATEGORY 分類</span><select class="field" id="ex-cat">${Object.entries(CATS).map(([k, l]) => `<option value="${k}" ${d.cat === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+      <label class="flab"><span>TAGS 部位</span><input class="field" id="ex-tags" value="${esc(d.tags)}" placeholder="例 足関節"></label></div>
+    <div class="row"><label class="flab"><span>REPS 初期値</span><input class="field" id="ex-reps" value="${esc(d.reps)}"></label>
+      <label class="flab"><span>UNIT</span><select class="field" id="ex-unit">${UNITS.map(u => `<option ${d.unit === u ? 'selected' : ''}>${u}</option>`).join('')}</select></label>
+      <label class="flab"><span>SETS</span><input class="field" id="ex-sets" value="${esc(d.sets)}"></label></div>
+    <div class="row"><label class="flab"><span>LOAD 負荷の種類</span><select class="field" id="ex-lt">${LOADS.map(l => `<option ${d.loadType === l ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+      <label class="flab"><span>VALUE 値</span><input class="field" id="ex-load" value="${esc(d.load)}" placeholder="例 5 / 赤 / 60"></label></div>
+    <label class="chk"><input type="checkbox" id="ex-side" ${d.side ? 'checked' : ''}>左右それぞれ行う</label>
+    <label class="flab"><span>POINT ポイント・注意点</span><textarea class="field" id="ex-point" rows="2">${esc(d.point)}</textarea></label>
+    <div class="row"><label class="flab" style="flex:3 1 220px"><span>VIDEO 動画URL（YouTubeなど）</span><input class="field" id="ex-video" value="${esc(d.video)}" placeholder="https://youtu.be/..." inputmode="url"></label>
+      <label class="flab"><span>START 再生開始</span><input class="field" id="ex-start" value="${esc(fmtStart(d.start))}" placeholder="1:20"></label></div>
+    <div class="flab"><span>PHOTO 自前の写真・イラスト（印刷とこの端末で表示）</span>
+      <div class="toolrow"><div class="lt" id="ex-photo-prev" style="width:96px;height:54px;border-radius:6px;background:#2A302D;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--dim)">${d.photo ? `<img src="${d.photo}" alt="" style="width:100%;height:100%;object-fit:cover">` : 'なし'}</div>
+        <label class="btn sm">写真を選ぶ<input type="file" accept="image/*" id="ex-photo" class="sr"></label>${d.photo ? '<button class="btn sm" data-act="ex-photo-clear">写真を外す</button>' : ''}</div>
+      <p class="help" style="margin:0">写真がない種目は、YouTubeのサムネイルを自動で使います。</p></div>
+    <div class="modal-acts">${ex ? '<button class="btn danger left" data-act="ex-del">削除</button>' : ''}<button class="btn" data-act="modal-close">キャンセル</button><button class="btn pri" data-act="ex-save">保存</button></div>`);
+}
+function readExForm() {
+  const d = exDraft; const v = id => ($('#' + id) || {}).value ?? '';
+  Object.assign(d, { name: v('ex-name').trim(), cat: v('ex-cat'), tags: v('ex-tags').trim(), reps: v('ex-reps').trim(), unit: v('ex-unit'), sets: v('ex-sets').trim(), loadType: v('ex-lt'), load: v('ex-load').trim(), side: $('#ex-side').checked, point: v('ex-point').trim(), video: v('ex-video').trim(), start: parseStart(v('ex-start')) });
+  if (!d.start) { const m = d.video.match(/[?&]t=(\d+)/); if (m) d.start = +m[1]; }
+  return d;
+}
+function resizeImage(file, max = 640) {
+  return new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onload = () => { const img = new Image(); img.onload = () => { const s = Math.min(1, max / Math.max(img.width, img.height)); const c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s); const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height); res(c.toDataURL('image/jpeg', 0.78)); }; img.onerror = rej; img.src = fr.result; };
+    fr.onerror = rej; fr.readAsDataURL(file);
+  });
+}
+
+/* ================= TEMPLATES ================= */
+function viewTemplates() {
+  const list = S.templates.filter(t => (U.tplCat === 'all' || t.group === U.tplCat) && (!U.tplMine || (S.settings.staff && t.owner === S.settings.staff)));
+  return `
+  <header class="topbar gut"><button class="back" data-act="home">‹ HOME</button><span class="spacer"></span><button class="btn pri" data-act="tpl-new">+ 新しいテンプレート</button></header>
+  <main class="page gut">
+    <h1 class="disp"><small>セットメニュー · ${S.templates.length}件</small>TEMPLATES</h1>
+    <div class="toolrow"><div class="lib-chips">${[['all', 'すべて'], ...Object.entries(TPL_GROUPS)].map(([k, l]) => `<button class="chip ${U.tplCat === k ? 'on' : ''}" data-act="tpl-cat" data-k="${k}">${l}</button>`).join('')}</div>
+      ${S.settings.staff ? `<label class="chk"><input type="checkbox" data-act="tpl-mine" ${U.tplMine ? 'checked' : ''}>自分（${esc(S.settings.staff)}）のテンプレだけ</label>` : ''}</div>
+    <p class="help" style="margin:0">プラン作成中に「テンプレ保存」を押すと、今のメニューをテンプレートとして保存できます。</p>
+    <div class="plist">${list.map(t => `
+      <div class="prow" style="grid-template-columns:minmax(0,1fr) auto">
+        <div style="min-width:0"><div class="ttl">${esc(t.name)}</div><div class="meta"><span class="tag">${TPL_GROUPS[t.group] || ''}</span>${t.items.length}種目${t.owner ? ` · ${esc(t.owner)}` : ''} · ${t.items.slice(0, 4).map(i => esc(i.name)).join(' / ')}${t.items.length > 4 ? ' …' : ''}</div></div>
+        <div class="acts"><button class="btn sm strong" data-act="tpl-edit" data-id="${t.id}">編集</button><button class="btn sm" data-act="tpl-dup" data-id="${t.id}">複製</button><button class="btn sm danger" data-act="tpl-del" data-id="${t.id}">削除</button></div>
+      </div>`).join('') || '<div class="empty">テンプレートがありません</div>'}</div>
+  </main>`;
+}
+
+/* ================= SETTINGS ================= */
+function viewSettings() {
+  return `
+  <header class="topbar gut"><button class="back" data-act="home">‹ HOME</button><span class="spacer"></span>${swatchesHTML()}</header>
+  <main class="page gut">
+    <h1 class="disp"><small>設定・データ</small>SETTINGS</h1>
+    <section class="card"><h2>STAFF<small>スタッフ名</small></h2>
+      <label class="flab"><span>あなたの名前（テンプレートの作成者として表示）</span><input class="field" data-sf="staff" value="${esc(S.settings.staff)}" placeholder="例 山根"></label></section>
+    <section class="card"><h2>HEADER<small>所属・ロゴ（印刷とスマホ表示に入ります）</small></h2>
+      ${S.headers.map(h => `
+        <div class="hdrrow" data-hid="${h.id}">
+          <label class="logo-box" title="ロゴを選ぶ">${h.logo ? `<img src="${h.logo}" alt="ロゴ">` : 'ロゴ'}<input type="file" accept="image/*" class="sr" data-act-file="logo"></label>
+          <div style="display:flex;flex-direction:column;gap:8px;min-width:0">
+            <div class="grid2"><label class="flab"><span>パターン名</span><input class="field" data-hf="label" value="${esc(h.label)}"></label><label class="flab"><span>所属名（表示される名前）</span><input class="field" data-hf="org" value="${esc(h.org)}"></label></div>
+            <div class="toolrow">${S.settings.headerId === h.id ? '<span class="tag">新規プランの初期値</span>' : `<button class="btn sm" data-act="hdr-default">新規プランの初期値にする</button>`}${h.logo ? '<button class="btn sm" data-act="hdr-logo-clear">ロゴを外す</button>' : ''}${S.headers.length > 1 ? '<button class="btn sm danger" data-act="hdr-del">削除</button>' : ''}</div>
+          </div>
+        </div>`).join('')}
+      <div><button class="btn sm" data-act="hdr-add">+ パターンを追加</button></div>
+      <p class="help" style="margin:0">ロゴは印刷物にだけ入ります。スマホ表示は所属名のみです（リンクを短く保つため）。</p></section>
+    <section class="card"><h2>WEB LINK<small>患者さんに送るページ</small></h2>
+      <label class="flab"><span>公開ページのURL（空欄なら今開いているページ）</span><input class="field" data-sf="viewerBase" value="${esc(S.settings.viewerBase)}" placeholder="${esc(location.origin + location.pathname)}" inputmode="url"></label>
+      <label class="chk"><input type="checkbox" data-sf="webInitials" ${S.settings.webInitials ? 'checked' : ''}>リンクにイニシャルを含める</label>
+      <p class="help" style="margin:0">メニューの内容はリンクの中に入っていて、サーバーには保存されません。リンクを知っている人だけが見られます。</p></section>
+    <section class="card"><h2>DATA<small>共有・バックアップ</small></h2>
+      <div class="toolrow"><button class="btn strong" data-act="export-share">ライブラリとテンプレを書き出す（スタッフ共有用）</button><button class="btn" data-act="export-all">全データを書き出す（バックアップ）</button></div>
+      <div class="toolrow"><label class="btn">ファイルを読み込む<input type="file" accept="application/json,.json" class="sr" data-act-file="import"></label><button class="btn" data-act="import-paste">貼り付けて読み込む</button></div>
+      <p class="help" style="margin:0">データはこの端末のブラウザの中だけに保存されています。機種変更やブラウザのデータ削除に備えて、ときどきバックアップしてください。読み込むと、同じ種目・テンプレートは上書きされ、新しいものは追加されます。</p></section>
+  </main>`;
+}
+
+/* ================= after render ================= */
+function afterRender() {
+  if ((U.view === 'edit' || U.view === 'tpl-edit') && window.Sortable) {
+    const pl = $('#planList');
+    if (pl) sortables.push(Sortable.create(pl, {
+      group: { name: 'menu', pull: false, put: true }, handle: '.drag', draggable: '.item', animation: 150, ghostClass: 'ghost', delay: 180, delayOnTouchOnly: true, filter: '.dropzone',
+      onUpdate(e) { const arr = targetItems(); const [m] = arr.splice(e.oldDraggableIndex, 1); arr.splice(e.newDraggableIndex, 0, m); touchTarget(); render(); },
+      onAdd(e) { const el = e.item; const exId = el.dataset.ex, tId = el.dataset.tpl; let idx = 0; let n = el.previousElementSibling; while (n) { if (n.classList.contains('item')) idx++; n = n.previousElementSibling; } el.remove(); insertAt(idx, exId, tId); }
+    }));
+    const ll = $('#libList');
+    if (ll) sortables.push(Sortable.create(ll, { group: { name: 'menu', pull: 'clone', put: false }, sort: false, draggable: '.lrow', handle: window.matchMedia('(max-width: 900px)').matches ? '.grip' : undefined, animation: 150, ghostClass: 'ghost', filter: 'button', preventOnFilter: false, delay: 150, delayOnTouchOnly: true }));
+  }
+  if (U.view === 'preview') {
+    const p = curPlan();
+    const key = p.id + ':' + p.updated;
+    if (U.linkFor !== key) { U.linkFor = key; U.link = ''; planLink(p).then(l => { if (U.linkFor === key) { U.link = l; if (U.view === 'preview') render(); } }); }
+    fitSheets();
+  }
+}
+function fitSheets() {
+  const w = $('#sheetWrap'); if (!w) return;
+  const avail = w.clientWidth - 32; const sheetPx = 210 * 96 / 25.4;
+  const s = Math.min(1, avail / sheetPx);
+  $$('.sheet', w).forEach(sh => { sh.style.zoom = s; });
+}
+window.addEventListener('resize', () => { if (U.view === 'preview') fitSheets(); });
+
+/* ================= actions ================= */
+function insertAt(idx, exId, tId) {
+  const arr = targetItems(); if (!arr) return;
+  let add = [];
+  if (exId) { const ex = exById(exId); if (ex) add = [itemFromEx(ex)]; }
+  if (tId) { const t = tplById(tId); if (t) add = t.items.map(i => Object.assign(clone(i), { uid: uid() })); }
+  if (!add.length) return;
+  arr.splice(Math.min(idx, arr.length), 0, ...add);
+  touchTarget(); render();
+  toast(add.length > 1 ? `${add.length}種目を追加しました` : `${add[0].name}を追加しました`);
+}
+function openPlan(id) { U.planId = id; U.block = 0; U.libCat = 'all'; U.libQ = ''; go('edit'); }
+function leaveEditorCleanup() { S.plans = S.plans.filter(hasContent); save(); }
+
+async function printPlan() {
+  const p = curPlan(); if (!p) return;
+  const link = U.link || await planLink(p);
+  const root = $('#print-root'); root.innerHTML = printHTML(p, link);
+  const imgs = $$('img', root);
+  await Promise.race([Promise.all(imgs.map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; }))), new Promise(r => setTimeout(r, 2500))]);
+  if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (e) {} }
+  window.print();
+}
+
+function mergeImport(data) {
+  if (!data || typeof data !== 'object') throw new Error('bad');
+  let n = { ex: 0, tpl: 0, hdr: 0, plan: 0 };
+  const up = (arr, items, k) => (items || []).forEach(it => { if (!it || !it.id) return; const i = arr.findIndex(x => x.id === it.id); if (i >= 0) arr[i] = it; else arr.push(it); n[k]++; });
+  up(S.exercises, data.exercises, 'ex'); up(S.templates, data.templates, 'tpl'); up(S.headers, data.headers, 'hdr'); up(S.plans, data.plans, 'plan');
+  if (!n.ex && !n.tpl && !n.hdr && !n.plan) throw new Error('empty');
+  saveNow(); render();
+  toast(`読み込みました（種目${n.ex}・テンプレ${n.tpl}・ヘッダー${n.hdr}${n.plan ? `・プラン${n.plan}` : ''}）`);
+}
+
+const ACTIONS = {
+  'home'() { if (U.view === 'edit') leaveEditorCleanup(); go('home'); },
+  'nav'(el) { if (U.view === 'edit') leaveEditorCleanup(); go(el.dataset.v); },
+  'accent'(el) { S.settings.accent = el.dataset.k; saveNow(); U.keepScroll = true; render(); },
+  'hide-notice'() { S.settings.seedNotice = false; save(); render(); },
+  'new-plan'(el) { const p = newPlan(el.dataset.type === 'weekly' ? 'weekly' : 'fixed'); S.plans.push(p); U.sheet = false; U.libTab = 'tpl'; openPlan(p.id); if (window.matchMedia('(max-width: 900px)').matches) { U.sheet = true; render(); } },
+  'open-plan'(el) { openPlan(el.dataset.id); },
+  'dup-plan'(el) { const src = planById(el.dataset.id); if (!src) return; const p = clone(src); const span = planDays(src); p.id = uid(); p.created = today(); p.start = today(); p.next = addDays(p.start, span); p.updated = Date.now(); p.items.forEach(i => i.uid = uid()); p.blocks.forEach(b => b.items.forEach(i => i.uid = uid())); S.plans.push(p); save(); openPlan(p.id); toast('複製しました。日付を確認してください'); },
+  'del-plan'(el) { const p = planById(el.dataset.id); confirmBox(`${p.initials || 'イニシャルなし'}（${dotDate(p.created)}）のプランを削除します。元に戻せません。`, '削除する', () => { S.plans = S.plans.filter(x => x.id !== p.id); saveNow(); render(); toast('削除しました'); }); },
+  'lib-tab'(el) { U.libTab = el.dataset.k; U.libCat = 'all'; U.libQ = ''; render(); },
+  'lib-cat'(el) { U.libCat = el.dataset.k; render(); },
+  'sheet-open'() { U.sheet = true; render(); },
+  'sheet-close'() { U.sheet = false; render(); },
+  'add-ex'(el) { insertAt(Infinity, el.dataset.id, null); },
+  'add-tpl'(el) { insertAt(Infinity, null, el.dataset.id); },
+  'rm-item'(el) { const arr = targetItems(); const u = el.closest('[data-uid]').dataset.uid; const i = arr.findIndex(x => x.uid === u); if (i >= 0) arr.splice(i, 1); touchTarget(); render(); },
+  'step'(el) { const arr = targetItems(); const it = arr.find(x => x.uid === el.closest('[data-uid]').dataset.uid); const v = parseFloat(it.reps); if (isNaN(v)) return; const step = it.unit === '秒' ? 5 : 1; it.reps = String(Math.max(0, v + step * (+el.dataset.d))); const inp = el.parentElement.querySelector('input'); if (inp) inp.value = it.reps; touchTarget(); },
+  'set-type'(el) { const p = curPlan(); const k = el.dataset.k; if (p.type === k) return; const from = p.type;
+    if (k === 'weekly' && from !== 'weekly' && p.items.length && !p.blocks.some(b => b.items.length)) { p.blocks[0].items = p.items; p.items = []; normSched(p); p.sched = p.sched.map(() => [p.blocks[0].id]); }
+    else if (k !== 'weekly' && from === 'weekly' && !p.items.length) { p.items = p.blocks.flatMap(b => b.items); }
+    p.type = k; U.block = 0; touch(p); render(); },
+  'sel-block'(el) { U.block = +el.dataset.i; render(); },
+  'add-block'() { const p = curPlan(); p.blocks.push({ id: uid(), name: `メニュー${LETTERS[p.blocks.length]}`, items: [] }); U.block = p.blocks.length - 1; touch(p); render(); },
+  'del-block'() { const p = curPlan(); const b = p.blocks[U.block]; confirmBox(`ブロック「${b.name}」を削除します（中の${b.items.length}種目も消えます）`, '削除する', () => { p.blocks.splice(U.block, 1); U.block = 0; normSched(p); touch(p); render(); }); },
+  'toggle-day'(el) { const p = curPlan(); normSched(p); const day = p.sched[+el.dataset.d]; const id = el.dataset.b; const i = day.indexOf(id); if (i >= 0) day.splice(i, 1); else { day.push(id); day.sort((a, b) => p.blocks.findIndex(x => x.id === a) - p.blocks.findIndex(x => x.id === b)); } touch(p); render(); },
+  'repeat-days'() { const p = curPlan(); normSched(p); const n = +($('#rep-n') || {}).value || 2; const pat = p.sched.slice(0, n); p.sched = p.sched.map((_, i) => [...pat[i % n]]); touch(p); render(); toast(`最初の${n}日を繰り返しました`); },
+  'clear-days'() { const p = curPlan(); normSched(p); p.sched = p.sched.map(() => []); touch(p); render(); },
+  'save-as-tpl'() { const p = curPlan(); const items = p.type === 'weekly' ? p.blocks[U.block].items : p.items; if (!items.length) { toast('種目を入れてから保存してください'); return; }
+    openModal(`<h3>SAVE TEMPLATE<small>${p.type === 'weekly' ? `ブロック「${esc(p.blocks[U.block].name)}」の${items.length}種目` : `今の${items.length}種目`}をテンプレートにします</small></h3>
+      <label class="flab"><span>NAME テンプレート名</span><input class="field" id="st-name" placeholder="例 足関節捻挫 フェーズ2（競技復帰前）" autofocus></label>
+      <label class="flab"><span>GROUP 分類</span><select class="field" id="st-group">${Object.entries(TPL_GROUPS).map(([k, l]) => `<option value="${k}">${l}</option>`).join('')}</select></label>
+      <div class="modal-acts"><button class="btn" data-act="modal-close">キャンセル</button><button class="btn pri" data-act="modal-ok">保存</button></div>`,
+      { ok: () => { const name = $('#st-name').value.trim(); if (!name) { $('#st-name').focus(); return; } S.templates.push({ id: uid(), name, group: $('#st-group').value, owner: S.settings.staff || '', items: items.map(i => Object.assign(clone(i), { uid: uid() })) }); saveNow(); closeModal(); toast('テンプレートに保存しました'); render(); } }); },
+  'preview'() { const p = curPlan(); if (!hasContent(p)) { toast('種目を1つ以上入れてください'); return; } U.pvDay = null; go('preview'); },
+  'back-edit'() { go('edit'); },
+  'pv-tab'(el) { U.pvTab = el.dataset.k; render(); },
+  'print'() { printPlan(); },
+  'copy-link'() { if (U.link) copyText(U.link, 'リンクをコピーしました'); },
+  'share-link'() { if (navigator.share && U.link) navigator.share({ title: 'トレーニングメニュー', url: U.link }).catch(() => {}); },
+  'vday'(el) { if (V) { V.day = +el.dataset.d; renderViewer(); } else { U.pvDay = +el.dataset.d; const pi = $('#phoneIn'); const p = curPlan(); if (pi && p) pi.innerHTML = viewerHTML(unpack(pack(p)), U.pvDay); applyAccent(); } },
+  'ex-cat'(el) { U.exCat = el.dataset.k; render(); },
+  'ex-new'() { openExModal(null); },
+  'ex-edit'(el) { openExModal(exById(el.dataset.id)); },
+  'ex-photo-clear'() { readExForm(); exDraft.photo = ''; const prev = $('#ex-photo-prev'); if (prev) prev.innerHTML = 'なし'; el_hide('[data-act="ex-photo-clear"]'); },
+  'ex-save'() { const d = readExForm(); if (!d.name) { toast('種目名を入れてください'); $('#ex-name').focus(); return; }
+    if (d.id) { const i = S.exercises.findIndex(e => e.id === d.id); S.exercises[i] = d; } else { d.id = uid(); S.exercises.push(d); }
+    saveNow(); closeModal(); render(); toast('保存しました'); },
+  'ex-del'() { const d = exDraft; confirmBox(`「${d.name}」をライブラリから削除します。作成済みのプランやテンプレートの中身は残ります。`, '削除する', () => { S.exercises = S.exercises.filter(e => e.id !== d.id); saveNow(); render(); toast('削除しました'); }); },
+  'tpl-cat'(el) { U.tplCat = el.dataset.k; render(); },
+  'tpl-new'() { const t = { id: uid(), name: '新しいテンプレート', group: 'phase', owner: S.settings.staff || '', items: [] }; S.templates.push(t); save(); U.tplId = t.id; U.libTab = 'ex'; U.libCat = 'all'; go('tpl-edit'); },
+  'lib-ex-edit'(el) { openExModal(exById(el.dataset.id)); },
+  'lib-tpl-edit'(el) { U.tplReturn = U.planId; U.tplId = el.dataset.id; U.libTab = 'ex'; U.libCat = 'all'; U.libQ = ''; go('tpl-edit'); },
+  'tpl-done'() { const r = U.tplReturn; U.tplReturn = null; if (r && planById(r)) { U.planId = r; U.libTab = 'tpl'; U.libCat = 'all'; go('edit'); } else go('templates'); },
+  'tpl-edit'(el) { U.tplReturn = null; U.tplId = el.dataset.id; U.libTab = 'ex'; U.libCat = 'all'; go('tpl-edit'); },
+  'tpl-dup'(el) { const t = clone(tplById(el.dataset.id)); t.id = uid(); t.name += '（コピー）'; t.owner = S.settings.staff || t.owner; t.items.forEach(i => i.uid = uid()); S.templates.push(t); saveNow(); render(); toast('複製しました'); },
+  'tpl-del'(el) { const t = tplById(el.dataset.id); confirmBox(`テンプレート「${t.name}」を削除します。`, '削除する', () => { S.templates = S.templates.filter(x => x.id !== t.id); saveNow(); render(); toast('削除しました'); }); },
+  'hdr-add'() { const h = { id: uid(), label: `パターン${S.headers.length + 1}`, org: '[所属名]', logo: '' }; S.headers.push(h); saveNow(); render(); },
+  'hdr-del'(el) { const id = el.closest('[data-hid]').dataset.hid; confirmBox('このヘッダーを削除します。', '削除する', () => { S.headers = S.headers.filter(h => h.id !== id); if (S.settings.headerId === id) S.settings.headerId = S.headers[0].id; saveNow(); render(); }); },
+  'hdr-default'(el) { S.settings.headerId = el.closest('[data-hid]').dataset.hid; saveNow(); render(); },
+  'hdr-logo-clear'(el) { const h = hdrById(el.closest('[data-hid]').dataset.hid); h.logo = ''; saveNow(); render(); },
+  'export-share'() { const d = { kind: 'rehab-menu-share', v: 1, exported: today(), by: S.settings.staff, exercises: S.exercises, templates: S.templates, headers: S.headers }; downloadFile(`rehab-menu-library-${today()}.json`, JSON.stringify(d)); },
+  'export-all'() { const d = Object.assign({ kind: 'rehab-menu-backup', exported: today() }, S); downloadFile(`rehab-menu-backup-${today()}.json`, JSON.stringify(d)); },
+  'import-paste'() { openModal(`<h3>IMPORT<small>書き出した内容を貼り付け</small></h3><textarea class="field" id="imp-text" rows="8" placeholder="{ ... }"></textarea><div class="modal-acts"><button class="btn" data-act="modal-close">キャンセル</button><button class="btn pri" data-act="modal-ok">読み込む</button></div>`, { ok: () => { try { mergeImport(JSON.parse($('#imp-text').value)); closeModal(); } catch (e) { toast('読み込めませんでした。書き出した内容をそのまま貼り付けてください'); } } }); },
+  'modal-close'() { closeModal(); },
+  'modal-ok'() { modalHandlers.ok && modalHandlers.ok(); },
+  'modal-bg'(el, e) { if (e.target === el) closeModal(); },
+  'tm-copy'() { const t = $('#tm-text'); t.select(); copyText(t.value); }
+};
+function el_hide(sel) { const e = $(sel); if (e) e.remove(); }
+
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]'); if (!el) return;
+  const a = ACTIONS[el.dataset.act]; if (!a) return;
+  if (el.tagName === 'INPUT' && el.type === 'checkbox') return; // handled on change
+  if (el.tagName === 'A') return;
+  e.preventDefault(); a(el, e);
+});
+document.addEventListener('input', e => {
+  const el = e.target;
+  if (el.dataset.in) { U[el.dataset.in] = el.value; const pos = el.selectionStart; const id = el.id; render(); const n = $('#' + id); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (er) {} } return; }
+  if (el.dataset.f && el.type !== 'checkbox' && el.tagName !== 'SELECT') { const arr = targetItems(); const it = arr && arr.find(x => x.uid === el.closest('[data-uid]').dataset.uid); if (it) { it[el.dataset.f] = el.value; touchTarget(); } return; }
+  if (el.dataset.pf && el.tagName !== 'SELECT' && el.type !== 'date') { const p = curPlan(); p[el.dataset.pf] = el.value; touch(p); return; }
+  if (el.dataset.bf) { const p = curPlan(); p.blocks[U.block][el.dataset.bf] = el.value; touch(p); const tab = $$('.btab .bn')[U.block]; if (tab) tab.firstChild.textContent = el.value; return; }
+  if (el.dataset.tf && el.tagName !== 'SELECT') { curTpl()[el.dataset.tf] = el.value; save(); return; }
+  if (el.dataset.hf) { const h = hdrById(el.closest('[data-hid]').dataset.hid); h[el.dataset.hf] = el.value; save(); return; }
+  if (el.dataset.sf && el.type !== 'checkbox') { S.settings[el.dataset.sf] = el.value; save(); return; }
+});
+document.addEventListener('change', async e => {
+  const el = e.target;
+  if (el.dataset.f && (el.type === 'checkbox' || el.tagName === 'SELECT')) { const arr = targetItems(); const it = arr.find(x => x.uid === el.closest('[data-uid]').dataset.uid); it[el.dataset.f] = el.type === 'checkbox' ? el.checked : el.value; touchTarget(); if (el.dataset.f === 'unit' || el.dataset.f === 'loadType') render(); return; }
+  if (el.dataset.pf && (el.tagName === 'SELECT' || el.type === 'date')) { const p = curPlan(); if (el.type === 'date' && !isDate(el.value)) return; p[el.dataset.pf] = el.value;
+    if (el.dataset.pf === 'start' && isDate(p.next) && diffDays(p.start, p.next) < 1) p.next = addDays(p.start, 1);
+    touch(p); render(); return; }
+  if (el.dataset.tf && el.tagName === 'SELECT') { curTpl()[el.dataset.tf] = el.value; save(); return; }
+  if (el.dataset.sf && el.type === 'checkbox') { S.settings[el.dataset.sf] = el.checked; save(); return; }
+  if (el.dataset.act === 'tpl-mine') { U.tplMine = el.checked; render(); return; }
+  if (el.id === 'ex-photo' && el.files[0]) { try { readExForm(); exDraft.photo = await resizeImage(el.files[0]); const prev = $('#ex-photo-prev'); if (prev) prev.innerHTML = `<img src="${exDraft.photo}" alt="" style="width:100%;height:100%;object-fit:cover">`; } catch (er) { toast('画像を読み込めませんでした'); } return; }
+  if (el.dataset.actFile === 'logo' && el.files[0]) { try { const h = hdrById(el.closest('[data-hid]').dataset.hid); h.logo = await resizeImage(el.files[0], 360); saveNow(); render(); } catch (er) { toast('画像を読み込めませんでした'); } return; }
+  if (el.dataset.actFile === 'import' && el.files[0]) { try { mergeImport(JSON.parse(await el.files[0].text())); } catch (er) { toast('読み込めませんでした。書き出したファイルを選んでください'); } el.value = ''; return; }
+});
+document.addEventListener('error', e => { if (e.target && e.target.tagName === 'IMG') { e.target.classList.add('broken'); } }, true);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#modal-root').innerHTML) closeModal(); });
+
+/* ================= viewer mode ================= */
+let V = null;
+function renderViewer() { $('#app').innerHTML = viewerHTML(V.data, V.day); }
+async function boot() {
+  const h = location.hash;
+  if (h.startsWith('#p=')) {
+    document.title = 'トレーニングメニュー';
+    try { const data = unpack(await decode(h.slice(3))); V = { data, day: null }; V.day = data.type === 'weekly' ? initialDay(data) : null; renderViewer(); }
+    catch (e) { $('#app').innerHTML = `<div class="vw gut"><h1 class="disp">LINK<br><span>ERROR</span></h1><p>リンクが途中で切れているか、壊れています。担当者にもう一度送ってもらってください。</p></div>`; }
+    return;
+  }
+  render();
+}
+window.addEventListener('hashchange', () => { if (location.hash.startsWith('#p=') || V) location.reload(); });
+boot();
+})();
+</script>
+
+</body>
+</html>
